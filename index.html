@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Management Dashboard</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0f7ff',
+                            100: '#e0effe',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom scrollbar for clean aesthetics */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        .dragging {
+            opacity: 0.5;
+            transform: scale(0.98);
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col">
+
+    <!-- Top Navigation / Header -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-brand-600 text-white p-2.5 rounded-xl shadow-md shadow-brand-500/20">
+                    <i class="fa-solid fa-list-check text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold text-slate-900 leading-tight">Project Flow</h1>
+                    <p class="text-xs text-slate-500 font-medium">個人與團隊任務管理面板</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center space-x-3">
+                <button id="openTaskModalBtn" class="bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 shadow-md shadow-brand-600/20 flex items-center space-x-2">
+                    <i class="fa-solid fa-plus text-xs"></i>
+                    <span>新增任務</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col space-y-6">
+
+        <!-- Stats Overview Cards -->
+        <section class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">總任務數</p>
+                    <h3 id="statTotal" class="text-2xl font-bold text-slate-800 mt-1">0</h3>
+                </div>
+                <div class="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center text-slate-600 text-xl">
+                    <i class="fa-solid fa-layer-group"></i>
+                </div>
+            </div>
+
+            <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-wider text-amber-500">進行中</p>
+                    <h3 id="statInProgress" class="text-2xl font-bold text-slate-800 mt-1">0</h3>
+                </div>
+                <div class="w-12 h-12 bg-amber-50 rounded-xl flex items-center justify-center text-amber-600 text-xl">
+                    <i class="fa-solid fa-spinner"></i>
+                </div>
+            </div>
+
+            <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-wider text-emerald-500">已完成</p>
+                    <h3 id="statCompleted" class="text-2xl font-bold text-slate-800 mt-1">0</h3>
+                </div>
+                <div class="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-600 text-xl">
+                    <i class="fa-solid fa-circle-check"></i>
+                </div>
+            </div>
+        </section>
+
+        <!-- Search & Filter Bar -->
+        <section class="flex flex-col sm:flex-row justify-between items-center gap-4 bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm">
+            <div class="relative w-full sm:w-80">
+                <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                <input type="text" id="searchInput" placeholder="搜尋任務名稱或描述..." class="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all">
+            </div>
+            
+            <div class="flex items-center space-x-2 w-full sm:w-auto justify-end">
+                <span class="text-xs text-slate-500 font-medium">篩選優先級：</span>
+                <select id="priorityFilter" class="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 font-medium text-slate-700">
+                    <option value="all">全部優先級</option>
+                    <option value="High">高優先級</option>
+                    <option value="Medium">中優先級</option>
+                    <option value="Low">低優先級</option>
+                </select>
+            </div>
+        </section>
+
+        <!-- Kanban Board Columns -->
+        <section class="grid grid-cols-1 md:grid-cols-3 gap-6 flex-grow items-start">
+
+            <!-- Column 1: To Do -->
+            <div class="bg-slate-100/70 border border-slate-200/70 rounded-2xl p-4 flex flex-col min-h-[500px]">
+                <div class="flex items-center justify-between mb-4 px-1">
+                    <div class="flex items-center space-x-2">
+                        <span class="w-3 h-3 rounded-full bg-slate-400"></span>
+                        <h2 class="font-bold text-slate-700 text-sm uppercase tracking-wider">未開始 (To Do)</h2>
+                        <span id="countToDo" class="bg-slate-200 text-slate-700 text-xs px-2 py-0.5 rounded-full font-bold">0</span>
+                    </div>
+                </div>
+                <div id="todoList" class="kanban-column flex-grow space-y-3" data-status="todo">
+                    <!-- Dynamic Task Cards Render Here -->
+                </div>
+            </div>
+
+            <!-- Column 2: In Progress -->
+            <div class="bg-slate-100/70 border border-slate-200/70 rounded-2xl p-4 flex flex-col min-h-[500px]">
+                <div class="flex items-center justify-between mb-4 px-1">
+                    <div class="flex items-center space-x-2">
+                        <span class="w-3 h-3 rounded-full bg-amber-400"></span>
+                        <h2 class="font-bold text-slate-700 text-sm uppercase tracking-wider">進行中 (In Progress)</h2>
+                        <span id="countInProgress" class="bg-amber-100 text-amber-800 text-xs px-2 py-0.5 rounded-full font-bold">0</span>
+                    </div>
+                </div>
+                <div id="inProgressList" class="kanban-column flex-grow space-y-3" data-status="inProgress">
+                    <!-- Dynamic Task Cards Render Here -->
+                </div>
+            </div>
+
+            <!-- Column 3: Completed -->
+            <div class="bg-slate-100/70 border border-slate-200/70 rounded-2xl p-4 flex flex-col min-h-[500px]">
+                <div class="flex items-center justify-between mb-4 px-1">
+                    <div class="flex items-center space-x-2">
+                        <span class="w-3 h-3 rounded-full bg-emerald-500"></span>
+                        <h2 class="font-bold text-slate-700 text-sm uppercase tracking-wider">已完成 (Completed)</h2>
+                        <span id="countCompleted" class="bg-emerald-100 text-emerald-800 text-xs px-2 py-0.5 rounded-full font-bold">0</span>
+                    </div>
+                </div>
+                <div id="completedList" class="kanban-column flex-grow space-y-3" data-status="completed">
+                    <!-- Dynamic Task Cards Render Here -->
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- Modal Form: Add / Edit Task -->
+    <div id="taskModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-200">
+        <div class="bg-white w-full max-w-md rounded-2xl shadow-xl border border-slate-100 overflow-hidden transform scale-95 transition-transform duration-200" id="modalContainer">
+            <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                <h3 id="modalTitle" class="font-bold text-slate-800 text-base">建立新任務</h3>
+                <button id="closeModalBtn" class="text-slate-400 hover:text-slate-600 transition-colors">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            
+            <form id="taskForm" class="p-6 space-y-4">
+                <input type="hidden" id="taskId">
+                
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">任務名稱 *</label>
+                    <input type="text" id="taskTitle" required placeholder="請輸入任務名稱..." class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">任務描述</label>
+                    <textarea id="taskDesc" rows="3" placeholder="請詳細說明任務內容..." class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all"></textarea>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">優先級</label>
+                        <select id="taskPriority" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium">
+                            <option value="Low">低 (Low)</option>
+                            <option value="Medium" selected>中 (Medium)</option>
+                            <option value="High">高 (High)</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">到期日</label>
+                        <input type="date" id="taskDueDate" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">狀態</label>
+                    <select id="taskStatus" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium">
+                        <option value="todo">未開始 (To Do)</option>
+                        <option value="inProgress">進行中 (In Progress)</option>
+                        <option value="completed">已完成 (Completed)</option>
+                    </select>
+                </div>
+
+                <div class="pt-4 flex items-center justify-end space-x-3 border-t border-slate-100">
+                    <button type="button" id="cancelModalBtn" class="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition-colors">取消</button>
+                    <button type="submit" class="px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold transition-colors shadow-md shadow-brand-600/20">儲存任務</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- JavaScript Logic -->
+    <script>
+        // State Management
+        let tasks = JSON.parse(localStorage.getItem('kanban_tasks')) || [
+            {
+                id: '1',
+                title: '完成 Github Repo 設定',
+                description: '建置 initial commit 同埋啟動 GitHub Pages 網站發佈。',
+                priority: 'High',
+                dueDate: '2026-11-15',
+                status: 'todo'
+            },
+            {
+                id: '2',
+                title: 'UI Dashboard 介面優化',
+                description: '調整 Tailwind CSS 排版，加入顏色高亮與視覺漸變。',
+                priority: 'Medium',
+                dueDate: '2026-11-18',
+                status: 'inProgress'
+            },
+            {
+                id: '3',
+                title: '專案需求分析',
+                description: '完成 Kanban Board 基礎架構規劃及功能列表整理。',
+                priority: 'Low',
+                dueDate: '2026-11-10',
+                status: 'completed'
+            }
+        ];
+
+        // DOM Elements
+        const modal = document.getElementById('taskModal');
+        const modalContainer = document.getElementById('modalContainer');
+        const taskForm = document.getElementById('taskForm');
+        const openModalBtn = document.getElementById('openTaskModalBtn');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+        const cancelModalBtn = document.getElementById('cancelModalBtn');
+        const searchInput = document.getElementById('searchInput');
+        const priorityFilter = document.getElementById('priorityFilter');
+
+        // Initial Load
+        window.onload = function() {
+            renderTasks();
+            setupEventListeners();
+            setupDragAndDrop();
+        };
+
+        // Save to LocalStorage
+        function saveTasks() {
+            localStorage.setItem('kanban_tasks', JSON.stringify(tasks));
+            renderTasks();
+        }
+
+        // Render Tasks into Columns
+        function renderTasks() {
+            const todoList = document.getElementById('todoList');
+            const inProgressList = document.getElementById('inProgressList');
+            const completedList = document.getElementById('completedList');
+
+            // Clear containers
+            todoList.innerHTML = '';
+            inProgressList.innerHTML = '';
+            completedList.innerHTML = '';
+
+            const searchTerm = searchInput.value.toLowerCase();
+            const filterPriority = priorityFilter.value;
+
+            let counts = { todo: 0, inProgress: 0, completed: 0 };
+
+            tasks.forEach(task => {
+                // Filter checks
+                const matchesSearch = task.title.toLowerCase().includes(searchTerm) || task.description.toLowerCase().includes(searchTerm);
+                const matchesPriority = filterPriority === 'all' || task.priority === filterPriority;
+
+                if (matchesSearch && matchesPriority) {
+                    counts[task.status]++;
+                    const card = createTaskCardHTML(task);
+
+                    if (task.status === 'todo') todoList.appendChild(card);
+                    else if (task.status === 'inProgress') inProgressList.appendChild(card);
+                    else if (task.status === 'completed') completedList.appendChild(card);
+                }
+            });
+
+            // Update stats
+            document.getElementById('statTotal').innerText = tasks.length;
+            document.getElementById('statInProgress').innerText = tasks.filter(t => t.status === 'inProgress').length;
+            document.getElementById('statCompleted').innerText = tasks.filter(t => t.status === 'completed').length;
+
+            document.getElementById('countToDo').innerText = counts.todo;
+            document.getElementById('countInProgress').innerText = counts.inProgress;
+            document.getElementById('countCompleted').innerText = counts.completed;
+        }
+
+        // Create Task Card Element
+        function createTaskCardHTML(task) {
+            const card = document.createElement('div');
+            card.className = 'bg-white p-4 rounded-xl border border-slate-200/80 shadow-sm hover:shadow-md transition-all duration-200 cursor-grab active:cursor-grabbing group relative';
+            card.draggable = true;
+            card.dataset.id = task.id;
+
+            // Priority Badge Color
+            let priorityBadge = '';
+            if (task.priority === 'High') {
+                priorityBadge = '<span class="bg-rose-50 text-rose-600 border border-rose-200 text-xs px-2 py-0.5 rounded-md font-semibold">高優先級</span>';
+            } else if (task.priority === 'Medium') {
+                priorityBadge = '<span class="bg-amber-50 text-amber-600 border border-amber-200 text-xs px-2 py-0.5 rounded-md font-semibold">中優先級</span>';
+            } else {
+                priorityBadge = '<span class="bg-slate-100 text-slate-600 border border-slate-200 text-xs px-2 py-0.5 rounded-md font-semibold">低優先級</span>';
+            }
+
+            const formattedDate = task.dueDate ? `<i class="fa-regular fa-calendar text-slate-400 mr-1"></i>${task.dueDate}` : '';
+
+            card.innerHTML = `
+                <div class="flex justify-between items-start mb-2">
+                    ${priorityBadge}
+                    <div class="opacity-0 group-hover:opacity-100 transition-opacity flex space-x-1">
+                        <button onclick="editTask('${task.id}')" class="p-1 text-slate-400 hover:text-brand-600 transition-colors">
+                            <i class="fa-solid fa-pen-to-square"></i>
+                        </button>
+                        <button onclick="deleteTask('${task.id}')" class="p-1 text-slate-400 hover:text-rose-600 transition-colors">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </div>
+                </div>
+                <h4 class="font-bold text-slate-800 text-sm mb-1 leading-snug">${escapeHTML(task.title)}</h4>
+                ${task.description ? `<p class="text-xs text-slate-500 mb-3 line-clamp-2">${escapeHTML(task.description)}</p>` : ''}
+                <div class="flex items-center justify-between text-xs text-slate-400 pt-2 border-t border-slate-100 mt-2">
+                    <span>${formattedDate}</span>
+                    <div class="flex space-x-1">
+                        ${task.status !== 'todo' ? `<button onclick="moveStatus('${task.id}', 'prev')" class="px-1.5 py-0.5 rounded hover:bg-slate-100 text-slate-600"><i class="fa-solid fa-chevron-left"></i></button>` : ''}
+                        ${task.status !== 'completed' ? `<button onclick="moveStatus('${task.id}', 'next')" class="px-1.5 py-0.5 rounded hover:bg-slate-100 text-slate-600"><i class="fa-solid fa-chevron-right"></i></button>` : ''}
+                    </div>
+                </div>
+            `;
+
+            // Add Drag Events
+            card.addEventListener('dragstart', () => {
+                card.classList.add('dragging');
+            });
+            card.addEventListener('dragend', () => {
+                card.classList.remove('dragging');
+            });
+
+            return card;
+        }
+
+        // HTML Escape Guard
+        function escapeHTML(str) {
+            return str.replace(/[&<>'"]/g, 
+                tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+            );
+        }
+
+        // Drag and Drop Column Listeners
+        function setupDragAndDrop() {
+            const columns = document.querySelectorAll('.kanban-column');
+            columns.forEach(column => {
+                column.addEventListener('dragover', e => {
+                    e.preventDefault();
+                    column.classList.add('bg-slate-200/50');
+                });
+
+                column.addEventListener('dragleave', () => {
+                    column.classList.remove('bg-slate-200/50');
+                });
+
+                column.addEventListener('drop', e => {
+                    e.preventDefault();
+                    column.classList.remove('bg-slate-200/50');
+                    const draggingCard = document.querySelector('.dragging');
+                    if (draggingCard) {
+                        const taskId = draggingCard.dataset.id;
+                        const newStatus = column.dataset.status;
+                        const taskObj = tasks.find(t => t.id === taskId);
+                        if (taskObj) {
+                            taskObj.status = newStatus;
+                            saveTasks();
+                        }
+                    }
+                });
+            });
+        }
+
+        // Quick Move Task Button
+        function moveStatus(id, direction) {
+            const task = tasks.find(t => t.id === id);
+            if (!task) return;
+
+            const order = ['todo', 'inProgress', 'completed'];
+            let index = order.indexOf(task.status);
+            if (direction === 'next' && index < order.length - 1) index++;
+            if (direction === 'prev' && index > 0) index--;
+
+            task.status = order[index];
+            saveTasks();
+        }
+
+        // Delete Task
+        function deleteTask(id) {
+            tasks = tasks.filter(t => t.id !== id);
+            saveTasks();
+        }
+
+        // Edit Task Modal Open
+        function editTask(id) {
+            const task = tasks.find(t => t.id === id);
+            if (!task) return;
+
+            document.getElementById('taskId').value = task.id;
+            document.getElementById('taskTitle').value = task.title;
+            document.getElementById('taskDesc').value = task.description;
+            document.getElementById('taskPriority').value = task.priority;
+            document.getElementById('taskDueDate').value = task.dueDate;
+            document.getElementById('taskStatus').value = task.status;
+
+            document.getElementById('modalTitle').innerText = '編輯任務';
+            openModal();
+        }
+
+        // Modal Controls
+        function openModal() {
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                modalContainer.classList.remove('scale-95');
+            }, 10);
+        }
+
+        function closeModal() {
+            modal.classList.add('opacity-0');
+            modalContainer.classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                taskForm.reset();
+                document.getElementById('taskId').value = '';
+                document.getElementById('modalTitle').innerText = '建立新任務';
+            }, 200);
+        }
+
+        // Event Listeners Setup
+        function setupEventListeners() {
+            openModalBtn.addEventListener('click', openModal);
+            closeModalBtn.addEventListener('click', closeModal);
+            cancelModalBtn.addEventListener('click', closeModal);
+
+            searchInput.addEventListener('input', renderTasks);
+            priorityFilter.addEventListener('change', renderTasks);
+
+            taskForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const id = document.getElementById('taskId').value;
+                const title = document.getElementById('taskTitle').value;
+                const description = document.getElementById('taskDesc').value;
+                const priority = document.getElementById('taskPriority').value;
+                const dueDate = document.getElementById('taskDueDate').value;
+                const status = document.getElementById('taskStatus').value;
+
+                if (id) {
+                    // Update existing
+                    const taskIndex = tasks.findIndex(t => t.id === id);
+                    if (taskIndex !== -1) {
+                        tasks[taskIndex] = { id, title, description, priority, dueDate, status };
+                    }
+                } else {
+                    // Create new
+                    const newTask = {
+                        id: Date.now().toString(),
+                        title,
+                        description,
+                        priority,
+                        dueDate,
+                        status
+                    };
+                    tasks.push(newTask);
+                }
+
+                saveTasks();
+                closeModal();
+            });
+        }
+    </script>
+</body>
+</html>
