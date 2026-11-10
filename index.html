@@ -1,521 +1,538 @@
 <!DOCTYPE html>
-<html lang="zh-HK">
+<html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Project Management Dashboard</title>
-    <!-- Tailwind CSS -->
+    <title>StreamTek Project Management Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                    },
-                    colors: {
-                        brand: {
-                            50: '#f0f7ff',
-                            100: '#e0effe',
-                            500: '#3b82f6',
-                            600: '#2563eb',
-                            700: '#1d4ed8',
-                        }
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        /* Custom scrollbar for clean aesthetics */
-        ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #f1f5f9;
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #94a3b8;
-        }
-        .dragging {
-            opacity: 0.5;
-            transform: scale(0.98);
-        }
-    </style>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
-<body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col">
+<body class="bg-slate-100 min-h-screen text-slate-800 flex flex-col font-sans">
 
-    <!-- Top Navigation / Header -->
-    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+    <!-- Header -->
+    <header class="bg-slate-900 text-white shadow-md">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
             <div class="flex items-center space-x-3">
-                <div class="bg-brand-600 text-white p-2.5 rounded-xl shadow-md shadow-brand-500/20">
-                    <i class="fa-solid fa-list-check text-xl"></i>
-                </div>
-                <div>
-                    <h1 class="text-xl font-bold text-slate-900 leading-tight">Project Flow</h1>
-                    <p class="text-xs text-slate-500 font-medium">個人與團隊任務管理面板</p>
-                </div>
+                <i class="fa-solid fa-microchip text-indigo-400 text-2xl"></i>
+                <h1 class="text-xl font-bold tracking-wide">StreamTek Project Spec & Task Manager</h1>
             </div>
-            
-            <div class="flex items-center space-x-3">
-                <button id="openTaskModalBtn" class="bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 shadow-md shadow-brand-600/20 flex items-center space-x-2">
-                    <i class="fa-solid fa-plus text-xs"></i>
-                    <span>新增任務</span>
-                </button>
-            </div>
+            <button onclick="openProjectModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2 shadow">
+                <i class="fa-solid fa-plus"></i> 新增專案 (New Project)
+            </button>
         </div>
     </header>
 
-    <!-- Main Content Area -->
-    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col space-y-6">
+    <!-- Content Area -->
+    <main class="flex-grow max-w-7xl w-full mx-auto p-4 space-y-6">
 
-        <!-- Stats Overview Cards -->
-        <section class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between">
+        <!-- Project Selector & Dashboard Summary -->
+        <section class="bg-white rounded-xl shadow p-5 border border-slate-200">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">總任務數</p>
-                    <h3 id="statTotal" class="text-2xl font-bold text-slate-800 mt-1">0</h3>
+                    <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">目前檢視的專案 (Current Project)</label>
+                    <div class="flex items-center gap-3">
+                        <select id="projectSelect" onchange="switchProject()" class="bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-slate-800 font-semibold focus:ring-2 focus:ring-indigo-500 min-w-[240px]">
+                            <!-- Dynamic Options -->
+                        </select>
+                        <button onclick="viewCurrentProjectSpec()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2 rounded-md font-medium border border-slate-300 transition">
+                            <i class="fa-solid fa-file-lines mr-1"></i> 查看 Spec 規格
+                        </button>
+                    </div>
                 </div>
-                <div class="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center text-slate-600 text-xl">
-                    <i class="fa-solid fa-layer-group"></i>
-                </div>
-            </div>
 
-            <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between">
-                <div>
-                    <p class="text-xs font-semibold uppercase tracking-wider text-amber-500">進行中</p>
-                    <h3 id="statInProgress" class="text-2xl font-bold text-slate-800 mt-1">0</h3>
-                </div>
-                <div class="w-12 h-12 bg-amber-50 rounded-xl flex items-center justify-center text-amber-600 text-xl">
-                    <i class="fa-solid fa-spinner"></i>
-                </div>
-            </div>
-
-            <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between">
-                <div>
-                    <p class="text-xs font-semibold uppercase tracking-wider text-emerald-500">已完成</p>
-                    <h3 id="statCompleted" class="text-2xl font-bold text-slate-800 mt-1">0</h3>
-                </div>
-                <div class="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-600 text-xl">
-                    <i class="fa-solid fa-circle-check"></i>
+                <!-- Stats -->
+                <div class="flex items-center gap-4 text-center">
+                    <div class="px-4 py-2 bg-slate-50 rounded-lg border border-slate-100">
+                        <p class="text-xs text-slate-500">待處理</p>
+                        <p id="statTodo" class="text-lg font-bold text-slate-700">0</p>
+                    </div>
+                    <div class="px-4 py-2 bg-slate-50 rounded-lg border border-slate-100">
+                        <p class="text-xs text-slate-500">進行中</p>
+                        <p id="statInProgress" class="text-lg font-bold text-amber-600">0</p>
+                    </div>
+                    <div class="px-4 py-2 bg-slate-50 rounded-lg border border-slate-100">
+                        <p class="text-xs text-slate-500">已完成</p>
+                        <p id="statDone" class="text-lg font-bold text-emerald-600">0</p>
+                    </div>
                 </div>
             </div>
         </section>
 
-        <!-- Search & Filter Bar -->
-        <section class="flex flex-col sm:flex-row justify-between items-center gap-4 bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm">
-            <div class="relative w-full sm:w-80">
-                <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
-                <input type="text" id="searchInput" placeholder="搜尋任務名稱或描述..." class="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all">
+        <!-- Kanban Board -->
+        <section class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- To Do -->
+            <div class="bg-slate-200/60 rounded-xl p-4 border border-slate-200 flex flex-col min-h-[500px]">
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="font-bold text-slate-700 flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-slate-400"></span> 待處理 (To Do)
+                    </h3>
+                    <button onclick="openTaskModal('todo')" class="text-xs text-indigo-600 hover:text-indigo-800 font-medium">+ 加任務</button>
+                </div>
+                <div id="column-todo" class="space-y-3 flex-grow" ondragover="allowDrop(event)" ondrop="drop(event, 'todo')"></div>
             </div>
-            
-            <div class="flex items-center space-x-2 w-full sm:w-auto justify-end">
-                <span class="text-xs text-slate-500 font-medium">篩選優先級：</span>
-                <select id="priorityFilter" class="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 font-medium text-slate-700">
-                    <option value="all">全部優先級</option>
-                    <option value="High">高優先級</option>
-                    <option value="Medium">中優先級</option>
-                    <option value="Low">低優先級</option>
-                </select>
+
+            <!-- In Progress -->
+            <div class="bg-amber-50/60 rounded-xl p-4 border border-amber-200/60 flex flex-col min-h-[500px]">
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="font-bold text-amber-800 flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span> 進行中 (In Progress)
+                    </h3>
+                    <button onclick="openTaskModal('in_progress')" class="text-xs text-amber-700 hover:text-amber-900 font-medium">+ 加任務</button>
+                </div>
+                <div id="column-in_progress" class="space-y-3 flex-grow" ondragover="allowDrop(event)" ondrop="drop(event, 'in_progress')"></div>
+            </div>
+
+            <!-- Done -->
+            <div class="bg-emerald-50/60 rounded-xl p-4 border border-emerald-200/60 flex flex-col min-h-[500px]">
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="font-bold text-emerald-800 flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> 已完成 (Completed)
+                    </h3>
+                    <button onclick="openTaskModal('done')" class="text-xs text-emerald-700 hover:text-emerald-900 font-medium">+ 加任務</button>
+                </div>
+                <div id="column-done" class="space-y-3 flex-grow" ondragover="allowDrop(event)" ondrop="drop(event, 'done')"></div>
             </div>
         </section>
-
-        <!-- Kanban Board Columns -->
-        <section class="grid grid-cols-1 md:grid-cols-3 gap-6 flex-grow items-start">
-
-            <!-- Column 1: To Do -->
-            <div class="bg-slate-100/70 border border-slate-200/70 rounded-2xl p-4 flex flex-col min-h-[500px]">
-                <div class="flex items-center justify-between mb-4 px-1">
-                    <div class="flex items-center space-x-2">
-                        <span class="w-3 h-3 rounded-full bg-slate-400"></span>
-                        <h2 class="font-bold text-slate-700 text-sm uppercase tracking-wider">未開始 (To Do)</h2>
-                        <span id="countToDo" class="bg-slate-200 text-slate-700 text-xs px-2 py-0.5 rounded-full font-bold">0</span>
-                    </div>
-                </div>
-                <div id="todoList" class="kanban-column flex-grow space-y-3" data-status="todo">
-                    <!-- Dynamic Task Cards Render Here -->
-                </div>
-            </div>
-
-            <!-- Column 2: In Progress -->
-            <div class="bg-slate-100/70 border border-slate-200/70 rounded-2xl p-4 flex flex-col min-h-[500px]">
-                <div class="flex items-center justify-between mb-4 px-1">
-                    <div class="flex items-center space-x-2">
-                        <span class="w-3 h-3 rounded-full bg-amber-400"></span>
-                        <h2 class="font-bold text-slate-700 text-sm uppercase tracking-wider">進行中 (In Progress)</h2>
-                        <span id="countInProgress" class="bg-amber-100 text-amber-800 text-xs px-2 py-0.5 rounded-full font-bold">0</span>
-                    </div>
-                </div>
-                <div id="inProgressList" class="kanban-column flex-grow space-y-3" data-status="inProgress">
-                    <!-- Dynamic Task Cards Render Here -->
-                </div>
-            </div>
-
-            <!-- Column 3: Completed -->
-            <div class="bg-slate-100/70 border border-slate-200/70 rounded-2xl p-4 flex flex-col min-h-[500px]">
-                <div class="flex items-center justify-between mb-4 px-1">
-                    <div class="flex items-center space-x-2">
-                        <span class="w-3 h-3 rounded-full bg-emerald-500"></span>
-                        <h2 class="font-bold text-slate-700 text-sm uppercase tracking-wider">已完成 (Completed)</h2>
-                        <span id="countCompleted" class="bg-emerald-100 text-emerald-800 text-xs px-2 py-0.5 rounded-full font-bold">0</span>
-                    </div>
-                </div>
-                <div id="completedList" class="kanban-column flex-grow space-y-3" data-status="completed">
-                    <!-- Dynamic Task Cards Render Here -->
-                </div>
-            </div>
-
-        </section>
-
     </main>
 
-    <!-- Modal Form: Add / Edit Task -->
-    <div id="taskModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-200">
-        <div class="bg-white w-full max-w-md rounded-2xl shadow-xl border border-slate-100 overflow-hidden transform scale-95 transition-transform duration-200" id="modalContainer">
-            <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-                <h3 id="modalTitle" class="font-bold text-slate-800 text-base">建立新任務</h3>
-                <button id="closeModalBtn" class="text-slate-400 hover:text-slate-600 transition-colors">
-                    <i class="fa-solid fa-xmark text-lg"></i>
-                </button>
+    <!-- MODAL 1: Create New Project Spec -->
+    <div id="projectModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                <h3 class="font-bold text-lg text-slate-800">建立新專案 Spec (New Project Specification)</h3>
+                <button onclick="closeProjectModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
             
-            <form id="taskForm" class="p-6 space-y-4">
-                <input type="hidden" id="taskId">
-                
+            <form id="projectForm" onsubmit="handleSaveProject(event)" class="p-6 space-y-4 overflow-y-auto flex-grow">
                 <div>
-                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">任務名稱 *</label>
-                    <input type="text" id="taskTitle" required placeholder="請輸入任務名稱..." class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all">
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">專案名稱 (Project Name) *</label>
+                    <input type="text" id="projName" required placeholder="例如: DAB Radio TableTop Gen2" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500">
                 </div>
 
                 <div>
-                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">任務描述</label>
-                    <textarea id="taskDesc" rows="3" placeholder="請詳細說明任務內容..." class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all"></textarea>
-                </div>
-
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">優先級</label>
-                        <select id="taskPriority" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium">
-                            <option value="Low">低 (Low)</option>
-                            <option value="Medium" selected>中 (Medium)</option>
-                            <option value="High">高 (High)</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">到期日</label>
-                        <input type="date" id="taskDueDate" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all">
-                    </div>
-                </div>
-
-                <div>
-                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">狀態</label>
-                    <select id="taskStatus" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium">
-                        <option value="todo">未開始 (To Do)</option>
-                        <option value="inProgress">進行中 (In Progress)</option>
-                        <option value="completed">已完成 (Completed)</option>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">選擇專案晶片規格類別 (Project Category) *</label>
+                    <select id="projCategory" onchange="renderSpecFields()" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 bg-slate-50 font-medium">
+                        <option value="Siena">Siena (DAB/DAB+ Receiver)</option>
+                        <option value="Venice-X">Venice-X (Connected Audio / Smart Radio)</option>
+                        <option value="Auria">Auria (GUI & Advanced Smart Streaming)</option>
                     </select>
                 </div>
 
-                <div class="pt-4 flex items-center justify-end space-x-3 border-t border-slate-100">
-                    <button type="button" id="cancelModalBtn" class="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition-colors">取消</button>
-                    <button type="submit" class="px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold transition-colors shadow-md shadow-brand-600/20">儲存任務</button>
+                <hr class="my-4 border-slate-200">
+
+                <!-- Dynamic Form Container based on selected PDF Spec -->
+                <div id="dynamicSpecFields" class="space-y-4"></div>
+
+                <div class="pt-4 flex justify-end gap-3">
+                    <button type="button" onclick="closeProjectModal()" class="px-4 py-2 border border-slate-300 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50">取消</button>
+                    <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-500 shadow">建立專案</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- JavaScript Logic -->
-    <script>
-        // State Management
-        let tasks = JSON.parse(localStorage.getItem('kanban_tasks')) || [
-            {
-                id: '1',
-                title: '完成 Github Repo 設定',
-                description: '建置 initial commit 同埋啟動 GitHub Pages 網站發佈。',
-                priority: 'High',
-                dueDate: '2026-11-15',
-                status: 'todo'
-            },
-            {
-                id: '2',
-                title: 'UI Dashboard 介面優化',
-                description: '調整 Tailwind CSS 排版，加入顏色高亮與視覺漸變。',
-                priority: 'Medium',
-                dueDate: '2026-11-18',
-                status: 'inProgress'
-            },
-            {
-                id: '3',
-                title: '專案需求分析',
-                description: '完成 Kanban Board 基礎架構規劃及功能列表整理。',
-                priority: 'Low',
-                dueDate: '2026-11-10',
-                status: 'completed'
-            }
-        ];
-
-        // DOM Elements
-        const modal = document.getElementById('taskModal');
-        const modalContainer = document.getElementById('modalContainer');
-        const taskForm = document.getElementById('taskForm');
-        const openModalBtn = document.getElementById('openTaskModalBtn');
-        const closeModalBtn = document.getElementById('closeModalBtn');
-        const cancelModalBtn = document.getElementById('cancelModalBtn');
-        const searchInput = document.getElementById('searchInput');
-        const priorityFilter = document.getElementById('priorityFilter');
-
-        // Initial Load
-        window.onload = function() {
-            renderTasks();
-            setupEventListeners();
-            setupDragAndDrop();
-        };
-
-        // Save to LocalStorage
-        function saveTasks() {
-            localStorage.setItem('kanban_tasks', JSON.stringify(tasks));
-            renderTasks();
-        }
-
-        // Render Tasks into Columns
-        function renderTasks() {
-            const todoList = document.getElementById('todoList');
-            const inProgressList = document.getElementById('inProgressList');
-            const completedList = document.getElementById('completedList');
-
-            // Clear containers
-            todoList.innerHTML = '';
-            inProgressList.innerHTML = '';
-            completedList.innerHTML = '';
-
-            const searchTerm = searchInput.value.toLowerCase();
-            const filterPriority = priorityFilter.value;
-
-            let counts = { todo: 0, inProgress: 0, completed: 0 };
-
-            tasks.forEach(task => {
-                // Filter checks
-                const matchesSearch = task.title.toLowerCase().includes(searchTerm) || task.description.toLowerCase().includes(searchTerm);
-                const matchesPriority = filterPriority === 'all' || task.priority === filterPriority;
-
-                if (matchesSearch && matchesPriority) {
-                    counts[task.status]++;
-                    const card = createTaskCardHTML(task);
-
-                    if (task.status === 'todo') todoList.appendChild(card);
-                    else if (task.status === 'inProgress') inProgressList.appendChild(card);
-                    else if (task.status === 'completed') completedList.appendChild(card);
-                }
-            });
-
-            // Update stats
-            document.getElementById('statTotal').innerText = tasks.length;
-            document.getElementById('statInProgress').innerText = tasks.filter(t => t.status === 'inProgress').length;
-            document.getElementById('statCompleted').innerText = tasks.filter(t => t.status === 'completed').length;
-
-            document.getElementById('countToDo').innerText = counts.todo;
-            document.getElementById('countInProgress').innerText = counts.inProgress;
-            document.getElementById('countCompleted').innerText = counts.completed;
-        }
-
-        // Create Task Card Element
-        function createTaskCardHTML(task) {
-            const card = document.createElement('div');
-            card.className = 'bg-white p-4 rounded-xl border border-slate-200/80 shadow-sm hover:shadow-md transition-all duration-200 cursor-grab active:cursor-grabbing group relative';
-            card.draggable = true;
-            card.dataset.id = task.id;
-
-            // Priority Badge Color
-            let priorityBadge = '';
-            if (task.priority === 'High') {
-                priorityBadge = '<span class="bg-rose-50 text-rose-600 border border-rose-200 text-xs px-2 py-0.5 rounded-md font-semibold">高優先級</span>';
-            } else if (task.priority === 'Medium') {
-                priorityBadge = '<span class="bg-amber-50 text-amber-600 border border-amber-200 text-xs px-2 py-0.5 rounded-md font-semibold">中優先級</span>';
-            } else {
-                priorityBadge = '<span class="bg-slate-100 text-slate-600 border border-slate-200 text-xs px-2 py-0.5 rounded-md font-semibold">低優先級</span>';
-            }
-
-            const formattedDate = task.dueDate ? `<i class="fa-regular fa-calendar text-slate-400 mr-1"></i>${task.dueDate}` : '';
-
-            card.innerHTML = `
-                <div class="flex justify-between items-start mb-2">
-                    ${priorityBadge}
-                    <div class="opacity-0 group-hover:opacity-100 transition-opacity flex space-x-1">
-                        <button onclick="editTask('${task.id}')" class="p-1 text-slate-400 hover:text-brand-600 transition-colors">
-                            <i class="fa-solid fa-pen-to-square"></i>
-                        </button>
-                        <button onclick="deleteTask('${task.id}')" class="p-1 text-slate-400 hover:text-rose-600 transition-colors">
-                            <i class="fa-solid fa-trash-can"></i>
-                        </button>
+    <!-- MODAL 2: Create New Task -->
+    <div id="taskModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl shadow-xl max-w-md w-full p-6 space-y-4">
+            <h3 class="font-bold text-lg text-slate-800">新增任務 (Add Task)</h3>
+            <form onsubmit="handleSaveTask(event)" class="space-y-3">
+                <input type="hidden" id="taskStatusTarget">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">任務名稱 *</label>
+                    <input type="text" id="taskTitle" required class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">詳細說明</label>
+                    <textarea id="taskDesc" rows="2" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-indigo-500"></textarea>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">優先級</label>
+                        <select id="taskPriority" class="w-full border border-slate-300 rounded-lg p-2 text-sm">
+                            <option value="Low">低 (Low)</option>
+                            <option value="Medium" selected>中 (Medium)</option>
+                            <option value="High">高 (High)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">到期日</label>
+                        <input type="date" id="taskDueDate" class="w-full border border-slate-300 rounded-lg p-2 text-sm">
                     </div>
                 </div>
-                <h4 class="font-bold text-slate-800 text-sm mb-1 leading-snug">${escapeHTML(task.title)}</h4>
-                ${task.description ? `<p class="text-xs text-slate-500 mb-3 line-clamp-2">${escapeHTML(task.description)}</p>` : ''}
-                <div class="flex items-center justify-between text-xs text-slate-400 pt-2 border-t border-slate-100 mt-2">
-                    <span>${formattedDate}</span>
-                    <div class="flex space-x-1">
-                        ${task.status !== 'todo' ? `<button onclick="moveStatus('${task.id}', 'prev')" class="px-1.5 py-0.5 rounded hover:bg-slate-100 text-slate-600"><i class="fa-solid fa-chevron-left"></i></button>` : ''}
-                        ${task.status !== 'completed' ? `<button onclick="moveStatus('${task.id}', 'next')" class="px-1.5 py-0.5 rounded hover:bg-slate-100 text-slate-600"><i class="fa-solid fa-chevron-right"></i></button>` : ''}
+                <div class="pt-3 flex justify-end gap-2">
+                    <button type="button" onclick="closeTaskModal()" class="px-3 py-1.5 border border-slate-300 rounded-lg text-xs font-medium text-slate-600">取消</button>
+                    <button type="submit" class="px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-500">新增</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 3: View Project Spec Detail -->
+    <div id="specDetailModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[85vh] flex flex-col overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-900 text-white">
+                <div>
+                    <h3 id="specDetailTitle" class="font-bold text-lg"></h3>
+                    <p id="specDetailCategory" class="text-xs text-indigo-300"></p>
+                </div>
+                <button onclick="closeSpecDetailModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div id="specDetailContent" class="p-6 overflow-y-auto space-y-4 text-sm">
+                <!-- Spec key-values injected here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Default LocalStorage Key
+        const STORAGE_KEY = 'STREAMTEK_PROJECTS_DATA_V1';
+
+        // State Data
+        let appData = {
+            projects: [
+                {
+                    id: 'proj-default-1',
+                    name: 'Demo Siena Radio Project',
+                    category: 'Siena',
+                    spec: {
+                        hwCode: 'HA-FS2415-000007',
+                        swCode: 'SW-SIENA-V1',
+                        brand: 'StreamTek',
+                        brandModel: 'ST-DAB-01',
+                        productClass: 'Table Top Radio',
+                        broadcast: ['DAB', 'DAB+', 'FM RDS'],
+                        features: ['Color Display', 'Internal EQ'],
+                        powerSupply: 'Single Supply 3.3V only'
+                    },
+                    tasks: [
+                        { id: 't1', title: '硬體電路板 Layout 確認', desc: '確認 Siena 晶片 3.3V 供電路徑', priority: 'High', dueDate: '2026-11-20', status: 'todo' },
+                        { id: 't2', title: 'DAB 天線收訊效能測試', desc: '進行廣播訊號衰減與感度分析', priority: 'Medium', dueDate: '2026-11-25', status: 'in_progress' }
+                    ]
+                }
+            ],
+            currentProjectId: 'proj-default-1'
+        };
+
+        // Init
+        window.addEventListener('DOMContentLoaded', () => {
+            loadData();
+            renderProjectSelect();
+            renderSpecFields();
+            renderTasks();
+        });
+
+        function saveData() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
+        }
+
+        function loadData() {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) {
+                try { appData = JSON.parse(saved); } catch(e) { console.error(e); }
+            }
+        }
+
+        function getCurrentProject() {
+            return appData.projects.find(p => p.id === appData.currentProjectId) || appData.projects[0];
+        }
+
+        function renderProjectSelect() {
+            const select = document.getElementById('projectSelect');
+            select.innerHTML = appData.projects.map(p => 
+                `<option value="${p.id}" ${p.id === appData.currentProjectId ? 'selected' : ''}>[${p.category}] ${p.name}</option>`
+            ).join('');
+        }
+
+        function switchProject() {
+            appData.currentProjectId = document.getElementById('projectSelect').value;
+            saveData();
+            renderTasks();
+        }
+
+        // Render Dynamic Form Fields Based on Selected Category
+        function renderSpecFields() {
+            const cat = document.getElementById('projCategory').value;
+            const container = document.getElementById('dynamicSpecFields');
+            
+            let html = `
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Hardware Code</label>
+                        <input type="text" name="hwCode" placeholder="HA-FSXXXX-XXXXXX" class="w-full border border-slate-300 rounded p-2 text-xs">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Software Code</label>
+                        <input type="text" name="swCode" placeholder="SW-XXXX" class="w-full border border-slate-300 rounded p-2 text-xs">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Brand / Owner</label>
+                        <input type="text" name="brand" placeholder="Brand Name" class="w-full border border-slate-300 rounded p-2 text-xs">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Brand Model Number</label>
+                        <input type="text" name="brandModel" placeholder="Model No." class="w-full border border-slate-300 rounded p-2 text-xs">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">OEM / OEM Model</label>
+                        <input type="text" name="oem" placeholder="OEM Info" class="w-full border border-slate-300 rounded p-2 text-xs">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Product Class</label>
+                        <select name="productClass" class="w-full border border-slate-300 rounded p-2 text-xs">
+                            <option>Table Top</option>
+                            <option>Kitchen Radio</option>
+                            <option>Clock Radio</option>
+                            <option>Portable Radio</option>
+                        </select>
                     </div>
                 </div>
             `;
 
-            // Add Drag Events
-            card.addEventListener('dragstart', () => {
-                card.classList.add('dragging');
-            });
-            card.addEventListener('dragend', () => {
-                card.classList.remove('dragging');
-            });
-
-            return card;
+            if (cat === 'Siena') {
+                html += `
+                    <div class="space-y-2 bg-slate-50 p-3 rounded-lg border border-slate-200">
+                        <p class="text-xs font-bold text-slate-700">Siena Specific Options</p>
+                        <div>
+                            <span class="block text-xs font-medium text-slate-600 mb-1">Broadcast Radio:</span>
+                            <div class="flex gap-4 text-xs">
+                                <label><input type="checkbox" name="broadcast" value="DAB" checked> DAB</label>
+                                <label><input type="checkbox" name="broadcast" value="DAB+" checked> DAB+</label>
+                                <label><input type="checkbox" name="broadcast" value="FM RDS" checked> FM RDS</label>
+                            </div>
+                        </div>
+                        <div>
+                            <span class="block text-xs font-medium text-slate-600 mb-1">Power Supply:</span>
+                            <div class="flex gap-4 text-xs">
+                                <label><input type="radio" name="powerSupply" value="Single Supply 3.3V" checked> Single 3.3V</label>
+                                <label><input type="radio" name="powerSupply" value="Separated Supply (3.3V, 1.8V, 1.1V)"> Separated (3.3V, 1.8V, 1.1V)</label>
+                            </div>
+                        </div>
+                        <div>
+                            <span class="block text-xs font-medium text-slate-600 mb-1">Additional Features:</span>
+                            <div class="grid grid-cols-3 gap-2 text-xs">
+                                <label><input type="checkbox" name="features" value="USB DFU"> USB DFU</label>
+                                <label><input type="checkbox" name="features" value="Color Display"> Color Display</label>
+                                <label><input type="checkbox" name="features" value="Internal EQ"> Internal EQ</label>
+                                <label><input type="checkbox" name="features" value="I2S Output"> I2S Output</label>
+                                <label><input type="checkbox" name="features" value="NFC"> NFC</label>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else if (cat === 'Venice-X') {
+                html += `
+                    <div class="space-y-2 bg-amber-50/50 p-3 rounded-lg border border-amber-200">
+                        <p class="text-xs font-bold text-amber-800">Venice-X Specific Options</p>
+                        <div>
+                            <span class="block text-xs font-medium text-slate-600 mb-1">Internet Content & Streaming:</span>
+                            <div class="grid grid-cols-3 gap-2 text-xs">
+                                <label><input type="checkbox" name="internetContent" value="IR Airable"> IR Airable</label>
+                                <label><input type="checkbox" name="internetContent" value="Spotify"> Spotify</label>
+                                <label><input type="checkbox" name="internetContent" value="Amazon Music"> Amazon Music</label>
+                                <label><input type="checkbox" name="internetContent" value="Deezer"> Deezer</label>
+                                <label><input type="checkbox" name="internetContent" value="TIDAL"> TIDAL</label>
+                                <label><input type="checkbox" name="internetContent" value="Qobuz"> Qobuz</label>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2 text-xs">
+                            <div>
+                                <span class="font-medium">WiFi Antenna:</span>
+                                <select name="wifiAntenna" class="w-full border rounded p-1 text-xs">
+                                    <option>Single Int. PIFA</option>
+                                    <option>Single Ext. - J5</option>
+                                    <option>Diversity PIFA+J5</option>
+                                    <option>Diversity J4+J5</option>
+                                </select>
+                            </div>
+                            <div>
+                                <span class="font-medium">Mobile App Support:</span>
+                                <select name="mobileApp" class="w-full border rounded p-1 text-xs">
+                                    <option>UNDOK</option>
+                                    <option>Customized UNDOK</option>
+                                    <option>None</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else if (cat === 'Auria') {
+                html += `
+                    <div class="space-y-2 bg-indigo-50/50 p-3 rounded-lg border border-indigo-200">
+                        <p class="text-xs font-bold text-indigo-800">Auria GUI & Advanced Audio Options</p>
+                        <div class="grid grid-cols-2 gap-2 text-xs">
+                            <div>
+                                <span class="font-medium">Streaming options:</span>
+                                <div class="space-y-1 mt-1">
+                                    <label class="block"><input type="checkbox" name="auriaStreaming" value="AirPlay2"> AirPlay 2</label>
+                                    <label class="block"><input type="checkbox" name="auriaStreaming" value="Spotify HiFi"> Spotify HiFi</label>
+                                    <label class="block"><input type="checkbox" name="auriaStreaming" value="Tidal Connect"> Tidal Connect</label>
+                                </div>
+                            </div>
+                            <div>
+                                <span class="font-medium">Hardware Features:</span>
+                                <div class="space-y-1 mt-1">
+                                    <label class="block"><input type="checkbox" name="auriaHw" value="Color UI"> Color UI</label>
+                                    <label class="block"><input type="checkbox" name="auriaHw" value="Build-In DAC"> Build-In DAC</label>
+                                    <label class="block"><input type="checkbox" name="auriaHw" value="AMP/DSP/EQ Tuning"> AMP/DSP/EQ Tuning</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            container.innerHTML = html;
         }
 
-        // HTML Escape Guard
-        function escapeHTML(str) {
-            return str.replace(/[&<>'"]/g, 
-                tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
-            );
+        // Modal Controllers
+        function openProjectModal() { document.getElementById('projectModal').classList.remove('hidden'); document.getElementById('projectModal').classList.add('flex'); }
+        function closeProjectModal() { document.getElementById('projectModal').classList.add('hidden'); document.getElementById('projectModal').classList.remove('flex'); }
+
+        function openTaskModal(status) {
+            document.getElementById('taskStatusTarget').value = status;
+            document.getElementById('taskModal').classList.remove('hidden');
+            document.getElementById('taskModal').classList.add('flex');
         }
+        function closeTaskModal() { document.getElementById('taskModal').classList.add('hidden'); document.getElementById('taskModal').classList.remove('flex'); }
 
-        // Drag and Drop Column Listeners
-        function setupDragAndDrop() {
-            const columns = document.querySelectorAll('.kanban-column');
-            columns.forEach(column => {
-                column.addEventListener('dragover', e => {
-                    e.preventDefault();
-                    column.classList.add('bg-slate-200/50');
-                });
+        // Save Project
+        function handleSaveProject(e) {
+            e.preventDefault();
+            const name = document.getElementById('projName').value;
+            const category = document.getElementById('projCategory').value;
+            const form = document.getElementById('projectForm');
+            const formData = new FormData(form);
 
-                column.addEventListener('dragleave', () => {
-                    column.classList.remove('bg-slate-200/50');
-                });
-
-                column.addEventListener('drop', e => {
-                    e.preventDefault();
-                    column.classList.remove('bg-slate-200/50');
-                    const draggingCard = document.querySelector('.dragging');
-                    if (draggingCard) {
-                        const taskId = draggingCard.dataset.id;
-                        const newStatus = column.dataset.status;
-                        const taskObj = tasks.find(t => t.id === taskId);
-                        if (taskObj) {
-                            taskObj.status = newStatus;
-                            saveTasks();
-                        }
-                    }
-                });
-            });
-        }
-
-        // Quick Move Task Button
-        function moveStatus(id, direction) {
-            const task = tasks.find(t => t.id === id);
-            if (!task) return;
-
-            const order = ['todo', 'inProgress', 'completed'];
-            let index = order.indexOf(task.status);
-            if (direction === 'next' && index < order.length - 1) index++;
-            if (direction === 'prev' && index > 0) index--;
-
-            task.status = order[index];
-            saveTasks();
-        }
-
-        // Delete Task
-        function deleteTask(id) {
-            tasks = tasks.filter(t => t.id !== id);
-            saveTasks();
-        }
-
-        // Edit Task Modal Open
-        function editTask(id) {
-            const task = tasks.find(t => t.id === id);
-            if (!task) return;
-
-            document.getElementById('taskId').value = task.id;
-            document.getElementById('taskTitle').value = task.title;
-            document.getElementById('taskDesc').value = task.description;
-            document.getElementById('taskPriority').value = task.priority;
-            document.getElementById('taskDueDate').value = task.dueDate;
-            document.getElementById('taskStatus').value = task.status;
-
-            document.getElementById('modalTitle').innerText = '編輯任務';
-            openModal();
-        }
-
-        // Modal Controls
-        function openModal() {
-            modal.classList.remove('hidden');
-            setTimeout(() => {
-                modal.classList.remove('opacity-0');
-                modalContainer.classList.remove('scale-95');
-            }, 10);
-        }
-
-        function closeModal() {
-            modal.classList.add('opacity-0');
-            modalContainer.classList.add('scale-95');
-            setTimeout(() => {
-                modal.classList.add('hidden');
-                taskForm.reset();
-                document.getElementById('taskId').value = '';
-                document.getElementById('modalTitle').innerText = '建立新任務';
-            }, 200);
-        }
-
-        // Event Listeners Setup
-        function setupEventListeners() {
-            openModalBtn.addEventListener('click', openModal);
-            closeModalBtn.addEventListener('click', closeModal);
-            cancelModalBtn.addEventListener('click', closeModal);
-
-            searchInput.addEventListener('input', renderTasks);
-            priorityFilter.addEventListener('change', renderTasks);
-
-            taskForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                const id = document.getElementById('taskId').value;
-                const title = document.getElementById('taskTitle').value;
-                const description = document.getElementById('taskDesc').value;
-                const priority = document.getElementById('taskPriority').value;
-                const dueDate = document.getElementById('taskDueDate').value;
-                const status = document.getElementById('taskStatus').value;
-
-                if (id) {
-                    // Update existing
-                    const taskIndex = tasks.findIndex(t => t.id === id);
-                    if (taskIndex !== -1) {
-                        tasks[taskIndex] = { id, title, description, priority, dueDate, status };
-                    }
+            const spec = {};
+            formData.forEach((value, key) => {
+                if (spec[key]) {
+                    if (!Array.isArray(spec[key])) spec[key] = [spec[key]];
+                    spec[key].push(value);
                 } else {
-                    // Create new
-                    const newTask = {
-                        id: Date.now().toString(),
-                        title,
-                        description,
-                        priority,
-                        dueDate,
-                        status
-                    };
-                    tasks.push(newTask);
+                    spec[key] = value;
                 }
-
-                saveTasks();
-                closeModal();
             });
+
+            const newProj = {
+                id: 'proj-' + Date.now(),
+                name,
+                category,
+                spec,
+                tasks: []
+            };
+
+            appData.projects.push(newProj);
+            appData.currentProjectId = newProj.id;
+            saveData();
+
+            renderProjectSelect();
+            renderTasks();
+            closeProjectModal();
+            form.reset();
+        }
+
+        // Save Task
+        function handleSaveTask(e) {
+            e.preventDefault();
+            const proj = getCurrentProject();
+            const newTask = {
+                id: 'task-' + Date.now(),
+                title: document.getElementById('taskTitle').value,
+                desc: document.getElementById('taskDesc').value,
+                priority: document.getElementById('taskPriority').value,
+                dueDate: document.getElementById('taskDueDate').value,
+                status: document.getElementById('taskStatusTarget').value
+            };
+
+            proj.tasks.push(newTask);
+            saveData();
+            renderTasks();
+            closeTaskModal();
+            document.getElementById('taskTitle').value = '';
+            document.getElementById('taskDesc').value = '';
+        }
+
+        // Render Tasks to Board
+        function renderTasks() {
+            const proj = getCurrentProject();
+            const cols = { todo: [], in_progress: [], done: [] };
+
+            proj.tasks.forEach(t => {
+                if (cols[t.status]) cols[t.status].push(t);
+            });
+
+            // Update stats
+            document.getElementById('statTodo').innerText = cols.todo.length;
+            document.getElementById('statInProgress').innerText = cols.in_progress.length;
+            document.getElementById('statDone').innerText = cols.done.length;
+
+            // Render columns
+            ['todo', 'in_progress', 'done'].forEach(status => {
+                const container = document.getElementById(`column-${status}`);
+                container.innerHTML = cols[status].map(t => `
+                    <div draggable="true" ondragstart="drag(event, '${t.id}')" class="bg-white p-3.5 rounded-lg shadow-sm border border-slate-200 hover:shadow-md transition space-y-2">
+                        <div class="flex justify-between items-start">
+                            <h4 class="font-semibold text-sm text-slate-800">${t.title}</h4>
+                            <button onclick="deleteTask('${t.id}')" class="text-slate-300 hover:text-red-500 text-xs"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                        ${t.desc ? `<p class="text-xs text-slate-500 line-clamp-2">${t.desc}</p>` : ''}
+                        <div class="flex justify-between items-center text-[10px] pt-1">
+                            <span class="px-2 py-0.5 rounded ${t.priority === 'High' ? 'bg-red-100 text-red-700' : t.priority === 'Medium' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-600'} font-medium">
+                                ${t.priority}
+                            </span>
+                            ${t.dueDate ? `<span class="text-slate-400"><i class="fa-regular fa-calendar mr-1"></i>${t.dueDate}</span>` : ''}
+                        </div>
+                    </div>
+                `).join('');
+            });
+        }
+
+        // Drag & Drop
+        function allowDrop(ev) { ev.preventDefault(); }
+        function drag(ev, id) { ev.dataTransfer.setData("taskId", id); }
+        function drop(ev, status) {
+            ev.preventDefault();
+            const id = ev.dataTransfer.getData("taskId");
+            const proj = getCurrentProject();
+            const task = proj.tasks.find(t => t.id === id);
+            if (task) {
+                task.status = status;
+                saveData();
+                renderTasks();
+            }
+        }
+
+        function deleteTask(id) {
+            const proj = getCurrentProject();
+            proj.tasks = proj.tasks.filter(t => t.id !== id);
+            saveData();
+            renderTasks();
+        }
+
+        // View Spec Detail
+        function viewCurrentProjectSpec() {
+            const proj = getCurrentProject();
+            document.getElementById('specDetailTitle').innerText = proj.name;
+            document.getElementById('specDetailCategory').innerText = `Category: ${proj.category}`;
+            
+            let html = `<div class="bg-slate-50 p-4 rounded-lg border border-slate-200 space-y-2">`;
+            for (const [k, v] of Object.entries(proj.spec)) {
+                if (k === 'projCategory' || k === 'projName') continue;
+                const displayVal = Array.isArray(v) ? v.join(', ') : (v || 'N/A');
+                html += `<div class="flex justify-between border-b border-slate-200 pb-1">
+                    <span class="font-medium text-slate-600 text-xs">${k}:</span>
+                    <span class="font-bold text-slate-800 text-xs">${displayVal}</span>
+                </div>`;
+            }
+            html += `</div>`;
+
+            document.getElementById('specDetailContent').innerHTML = html;
+            document.getElementById('specDetailModal').classList.remove('hidden');
+            document.getElementById('specDetailModal').classList.add('flex');
+        }
+
+        function closeSpecDetailModal() {
+            document.getElementById('specDetailModal').classList.add('hidden');
+            document.getElementById('specDetailModal').classList.remove('flex');
         }
     </script>
 </body>
