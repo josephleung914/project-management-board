@@ -1,0 +1,1617 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Harbour Light Technology Ltd. - Auria 專案開案管理系統</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'Noto Sans TC', 'sans-serif'],
+          },
+          colors: {
+            hl: {
+              navy: '#0F294A',
+              blue: '#1E40AF',
+              light: '#EFF6FF',
+              accent: '#0284C7',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      font-family: 'Inter', 'Noto Sans TC', sans-serif;
+      background-color: #F1F5F9;
+      color: #0F172A;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #F1F5F9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #CBD5E1;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94A3B8;
+    }
+
+    /* Print Stylesheet to mimic clean PDF Spec Sheet */
+    @media print {
+      body {
+        background-color: #FFFFFF !important;
+        color: #000000 !important;
+        font-size: 11px !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+      .print-only {
+        display: block !important;
+      }
+      #view-form {
+        display: block !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        max-width: 100% !important;
+      }
+      .spec-card {
+        box-shadow: none !important;
+        border: 1px solid #94A3B8 !important;
+        margin-bottom: 8px !important;
+        padding: 10px !important;
+        break-inside: avoid;
+      }
+      input, select, textarea {
+        border: 1px solid #CBD5E1 !important;
+        background: transparent !important;
+        padding: 2px 6px !important;
+        font-size: 11px !important;
+      }
+      .print-header-banner {
+        background: #0F294A !important;
+        color: #FFFFFF !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 no-print"></div>
+
+  <!-- Custom Confirmation Modal (Replaces window.confirm) -->
+  <div id="confirm-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 hidden items-center justify-center p-4 no-print">
+    <div class="bg-white rounded-xl shadow-xl max-w-md w-full p-6 border border-slate-200">
+      <div class="flex items-center gap-3 text-amber-600 mb-3">
+        <svg class="w-6 h-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+        <h3 id="confirm-title" class="text-lg font-bold text-slate-900">確認操作</h3>
+      </div>
+      <p id="confirm-message" class="text-sm text-slate-600 mb-6 leading-relaxed">確定要執行此動作嗎？</p>
+      <div class="flex justify-end gap-3">
+        <button id="confirm-cancel-btn" class="px-4 py-2 text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition">取消 (Cancel)</button>
+        <button id="confirm-ok-btn" class="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition">確定 (Confirm)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Top Navigation Header -->
+  <header class="bg-hl-navy text-white shadow-md sticky top-0 z-40 no-print">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between py-3 gap-3">
+        <!-- Brand Logo & Title -->
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-lg bg-white text-hl-navy flex items-center justify-center font-extrabold text-xl tracking-tighter shadow-inner shrink-0">
+            HL
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h1 class="text-base sm:text-lg font-bold tracking-wide leading-tight">HARBOUR LIGHT TECHNOLOGY LTD.</h1>
+              <span class="hidden sm:inline-block text-[11px] bg-sky-500/20 text-sky-200 border border-sky-400/30 px-2 py-0.5 rounded-full font-medium">Internal Portal</span>
+            </div>
+            <p class="text-xs text-slate-300">Auria Project Registration & Specification System (專案開案與規格管理系統)</p>
+          </div>
+        </div>
+
+        <!-- Primary Navigation Tabs -->
+        <nav class="flex items-center bg-slate-900/50 p-1 rounded-xl border border-slate-700/60 self-start md:self-auto">
+          <button id="tab-dashboard" onclick="switchTab('dashboard')" class="flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all bg-white text-hl-navy shadow-sm">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+            </svg>
+            <span>專案列表與管理 (List)</span>
+          </button>
+          <button id="tab-form" onclick="createNewProject()" class="flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all text-slate-200 hover:text-white">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+            <span id="tab-form-label">新增開案規格書 (New Spec)</span>
+          </button>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+    <!-- ===================================================================== -->
+    <!-- VIEW 1: PROJECT DASHBOARD & LIST VIEW                                 -->
+    <!-- ===================================================================== -->
+    <section id="view-dashboard" class="space-y-6">
+      
+      <!-- Top Action & Data Sync Bar -->
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
+        <div>
+          <h2 class="text-lg font-bold text-slate-800">Auria 專案總覽與進度追蹤 (Project Portfolio)</h2>
+          <p class="text-xs text-slate-500 mt-0.5">管理所有 OEM 廠商開案進度、軟硬體版本規格與關鍵日期。資料自動儲存於瀏覽器，亦可匯出 JSON 與團隊共享。</p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <button onclick="exportProjectsJSON()" class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg border border-slate-200 transition">
+            <svg class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            匯出備份 (Export JSON)
+          </button>
+          <label class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg border border-slate-200 transition cursor-pointer">
+            <svg class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+            </svg>
+            匯入資料 (Import)
+            <input type="file" id="import-json-input" accept=".json" class="hidden" onchange="importProjectsJSON(event)" />
+          </label>
+          <button onclick="createNewProject()" class="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-hl-blue hover:bg-blue-800 rounded-lg shadow-xs transition">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+            + 新增開案 (New Project)
+          </button>
+        </div>
+      </div>
+
+      <!-- KPI Summary Cards -->
+      <div class="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4" id="kpi-container">
+        <!-- Populated dynamically via JS -->
+      </div>
+
+      <!-- Filter, Search & Sort Controls -->
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-xs space-y-3">
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
+          <!-- Search Input -->
+          <div class="md:col-span-5 relative">
+            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </span>
+            <input type="text" id="search-input" oninput="renderProjectList()" placeholder="搜尋 OEM 廠商、品牌、型號、HW/SW Code..." class="w-full pl-9 pr-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-hl-blue focus:border-hl-blue" />
+          </div>
+
+          <!-- Status Filter -->
+          <div class="md:col-span-3">
+            <select id="filter-status" onchange="renderProjectList()" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-hl-blue">
+              <option value="ALL">所有狀態 (All Statuses)</option>
+              <option value="Draft">Draft (草稿)</option>
+              <option value="Kickoff">Kickoff (開案確認)</option>
+              <option value="In Development">In Development (開發中)</option>
+              <option value="EVT/DVT">EVT/DVT (樣機測試)</option>
+              <option value="MP">MP (量產階段)</option>
+              <option value="Completed">Completed (已結案)</option>
+              <option value="On Hold">On Hold (暫停)</option>
+            </select>
+          </div>
+
+          <!-- Sort Selector -->
+          <div class="md:col-span-4">
+            <div class="flex items-center gap-2">
+              <label for="sort-by" class="text-xs font-semibold text-slate-500 whitespace-nowrap">排列方式 (Sort):</label>
+              <select id="sort-by" onchange="renderProjectList()" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-hl-blue font-medium text-slate-700">
+                <option value="oem_asc">OEM Name (A → Z 廠商名稱正序)</option>
+                <option value="oem_desc">OEM Name (Z → A 廠商名稱倒序)</option>
+                <option value="brand_asc">Brand Name (A → Z 品牌名稱)</option>
+                <option value="update_desc">Last Update Date (最新更新優先)</option>
+                <option value="start_desc">Start Date (開案日期：新 → 舊)</option>
+                <option value="start_asc">Start Date (開案日期：舊 → 新)</option>
+                <option value="complete_asc">Complete Date (預計結案日期：近 → 遠)</option>
+                <option value="status">Project Status (依專案狀態分類)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Responsive Project Table -->
+      <div class="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-bold uppercase tracking-wider text-slate-600">
+                <th class="py-3.5 px-4">專案狀態<br><span class="text-[10px] font-normal text-slate-400">Update Status</span></th>
+                <th class="py-3.5 px-4 cursor-pointer hover:text-hl-blue" onclick="toggleOemSort()">
+                  <div class="flex items-center gap-1">
+                    <span>OEM 廠商名稱<br><span class="text-[10px] font-normal text-slate-400">Factory / OEM Name</span></span>
+                    <span id="oem-sort-indicator" class="text-hl-blue">▲</span>
+                  </div>
+                </th>
+                <th class="py-3.5 px-4">品牌與機種型號<br><span class="text-[10px] font-normal text-slate-400">Brand & Model</span></th>
+                <th class="py-3.5 px-4">軟硬體編碼<br><span class="text-[10px] font-normal text-slate-400">HW / SW Code</span></th>
+                <th class="py-3.5 px-4">開案日期<br><span class="text-[10px] font-normal text-slate-400">Start Date</span></th>
+                <th class="py-3.5 px-4">最後更新<br><span class="text-[10px] font-normal text-slate-400">Last Update</span></th>
+                <th class="py-3.5 px-4">預計/實際結案<br><span class="text-[10px] font-normal text-slate-400">Complete Date</span></th>
+                <th class="py-3.5 px-4">最新進度備註<br><span class="text-[10px] font-normal text-slate-400">Latest Note</span></th>
+                <th class="py-3.5 px-4 text-right">操作<br><span class="text-[10px] font-normal text-slate-400">Actions</span></th>
+              </tr>
+            </thead>
+            <tbody id="project-table-body" class="divide-y divide-slate-200 text-sm">
+              <!-- Populated dynamically via JS -->
+            </tbody>
+          </table>
+        </div>
+        <!-- Empty State -->
+        <div id="empty-state" class="hidden py-12 px-4 text-center">
+          <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-slate-100 text-slate-400 mb-3">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+          </div>
+          <h3 class="text-sm font-semibold text-slate-800">找不到符合條件的專案</h3>
+          <p class="text-xs text-slate-500 mt-1">請嘗試更改搜尋關鍵字、篩選條件，或點擊上方按鈕建立新開案規格書。</p>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ===================================================================== -->
+    <!-- VIEW 2: DIGITAL PROJECT SPECIFICATION FORM (AURIA GUI)                -->
+    <!-- ===================================================================== -->
+    <section id="view-form" class="hidden max-w-5xl mx-auto space-y-5">
+      
+      <!-- Top Form Action Bar (Hidden in Print) -->
+      <div class="flex flex-wrap items-center justify-between gap-3 bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs no-print">
+        <button type="button" onclick="switchTab('dashboard')" class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          返回列表 (Back to List)
+        </button>
+
+        <div class="flex flex-wrap items-center gap-2">
+          <button type="button" onclick="window.print()" class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded-lg shadow-2xs transition">
+            <svg class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+            </svg>
+            列印 / 存為 PDF (Print Spec)
+          </button>
+          <button type="button" id="btn-save-as-new" onclick="saveProject(true)" class="hidden inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-hl-blue bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg transition">
+            另存為新專案 (Save as New)
+          </button>
+          <button type="button" onclick="saveProject(false)" class="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-hl-blue hover:bg-blue-800 rounded-lg shadow-xs transition">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            </svg>
+            儲存專案與規格 (Save Project)
+          </button>
+        </div>
+      </div>
+
+      <!-- Spec Sheet Document Header (Matches PDF Header + Auria A3 Module Illustration) -->
+      <div class="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden spec-card">
+        <div class="print-header-banner bg-gradient-to-r from-hl-navy via-[#153966] to-hl-blue text-white p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div class="space-y-1">
+            <div class="flex items-center gap-2.5">
+              <span class="px-2.5 py-0.5 bg-white text-hl-navy font-extrabold text-sm rounded">H</span>
+              <h2 class="text-lg sm:text-xl font-bold tracking-wide">HARBOUR LIGHT TECHNOLOGY LTD.</h2>
+            </div>
+            <p class="text-xs text-sky-200">http://www.harbourlight.com.hk</p>
+            <div class="pt-2">
+              <span class="inline-block text-base sm:text-lg font-bold bg-white/10 border border-white/20 px-3 py-1 rounded-lg">
+                Project Specification - Auria GUI
+              </span>
+            </div>
+          </div>
+
+          <!-- Clean Vector Badge/Representation of the Auria A3 WiFi/Audio Module -->
+          <div class="flex items-center gap-3 bg-white/10 backdrop-blur-xs border border-white/20 p-3 rounded-xl self-start sm:self-center">
+            <svg class="w-16 h-16 shrink-0" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- PCB Board -->
+              <rect x="10" y="15" width="80" height="70" rx="4" fill="#15803D" stroke="#86EFAC" stroke-width="1.5"/>
+              <!-- PCB Trace Antenna -->
+              <path d="M16 24H34V28H20V32H34V36H16" stroke="#FACC15" stroke-width="2" stroke-linecap="round"/>
+              <!-- RF Shielding Can -->
+              <rect x="36" y="23" width="44" height="42" rx="2" fill="#CBD5E1" stroke="#64748B" stroke-width="1.5"/>
+              <rect x="40" y="27" width="36" height="34" rx="1" fill="#E2E8F0"/>
+              <text x="58" y="47" font-size="7" font-weight="bold" fill="#334155" text-anchor="middle" font-family="sans-serif">AURIA A3</text>
+              <!-- Flash IC Chip -->
+              <rect x="18" y="52" width="14" height="16" rx="1" fill="#F8FAFC" stroke="#334155" stroke-width="1"/>
+              <text x="25" y="62" font-size="4.5" font-weight="bold" fill="#0F172A" text-anchor="middle" font-family="sans-serif">ES4</text>
+              <!-- Castellated Pins -->
+              <g fill="#FACC15">
+                <circle cx="15" cy="82" r="1.5"/><circle cx="22" cy="82" r="1.5"/><circle cx="29" cy="82" r="1.5"/>
+                <circle cx="36" cy="82" r="1.5"/><circle cx="43" cy="82" r="1.5"/><circle cx="50" cy="82" r="1.5"/>
+                <circle cx="57" cy="82" r="1.5"/><circle cx="64" cy="82" r="1.5"/><circle cx="71" cy="82" r="1.5"/>
+                <circle cx="78" cy="82" r="1.5"/><circle cx="85" cy="82" r="1.5"/>
+              </g>
+            </svg>
+            <div class="text-xs">
+              <div class="font-bold text-white">Auria A3 Module</div>
+              <div class="text-sky-200 text-[11px]">Wi-Fi / BT / DAB+ / Audio</div>
+              <div class="mt-1 inline-block px-2 py-0.5 rounded bg-emerald-500/20 border border-emerald-400/40 text-emerald-200 text-[10px] font-semibold">
+                Mode: MMI (GUI)
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Spec Form -->
+      <form id="spec-form" class="space-y-5" onsubmit="event.preventDefault(); saveProject(false);">
+        <input type="hidden" id="project-id" value="" />
+
+        <!-- SECTION 0: Project Tracking & Management Info -->
+        <div class="bg-white rounded-xl border-2 border-blue-200 shadow-xs p-5 spec-card">
+          <div class="flex items-center justify-between border-b border-slate-200 pb-3 mb-4">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-hl-blue"></span>
+              <h3 class="text-sm sm:text-base font-bold text-hl-navy">專案開案與進度追蹤 (Project Tracking & Status)</h3>
+            </div>
+            <span class="text-[11px] font-medium text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded-full">Internal Management</span>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">專案狀態 (Project Update Status) <span class="text-red-500">*</span></label>
+              <select id="field-status" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white font-semibold text-slate-800 focus:ring-2 focus:ring-hl-blue">
+                <option value="Draft">Draft (草稿)</option>
+                <option value="Kickoff" selected>Kickoff (開案確認)</option>
+                <option value="In Development">In Development (開發中)</option>
+                <option value="EVT/DVT">EVT/DVT (樣機測試)</option>
+                <option value="MP">MP (量產階段)</option>
+                <option value="Completed">Completed (已結案)</option>
+                <option value="On Hold">On Hold (暫停)</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">開案日期 (Project Start Date) <span class="text-red-500">*</span></label>
+              <input type="date" id="field-startDate" required class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-hl-blue" />
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">最後更新日期 (Last Update Date)</label>
+              <input type="date" id="field-lastUpdateDate" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-slate-50 focus:ring-2 focus:ring-hl-blue" />
+              <p class="text-[10px] text-slate-400 mt-0.5">儲存時自動更新為今日 (可手動調整)</p>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">預計/實際結案日期 (Complete Date)</label>
+              <input type="date" id="field-completeDate" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-hl-blue" />
+            </div>
+
+            <div class="sm:col-span-2 lg:col-span-4">
+              <label class="block text-xs font-semibold text-slate-700 mb-1">專案進度備註 / 更新紀錄 (Project Update Note / Log)</label>
+              <input type="text" id="field-updateNote" placeholder="例如：已確認 UI 規格與按鍵定義，等待客戶提供開機 Logo 與 DSP 調音需求..." class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-hl-blue" />
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION 1: Product Code Information -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-xs p-5 spec-card">
+          <h3 class="text-sm sm:text-base font-bold text-hl-navy border-b border-slate-200 pb-2.5 mb-4">Product Code Information (產品與廠商基本資料)</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Factory / OEM Name (OEM 廠商名稱) <span class="text-red-500">*</span></label>
+              <input type="text" id="field-factory" required placeholder="e.g., Dongguan Audio Tech Co., Ltd." class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-hl-blue" />
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Factory Model Number (工廠型號)</label>
+              <input type="text" id="field-factoryModel" placeholder="e.g., AT-IR880-A3" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-hl-blue" />
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Brand / Brand Owner (品牌商)</label>
+              <input type="text" id="field-brand" placeholder="e.g., AcousticSound / Roberts" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-hl-blue" />
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Brand Model Name (品牌型號)</label>
+              <input type="text" id="field-brandModel" placeholder="e.g., Streamer Pro X1" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-hl-blue" />
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Hardware Code (硬體編碼)</label>
+              <input type="text" id="field-hwCode" value="HA-FS2345-000006" class="w-full px-3 py-2 text-sm font-mono border border-slate-300 rounded-lg bg-slate-50 focus:bg-white focus:ring-2 focus:ring-hl-blue" />
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Software Code (軟體編碼)</label>
+              <input type="text" id="field-swCode" placeholder="e.g., SW-AU3-202601" class="w-full px-3 py-2 text-sm font-mono border border-slate-300 rounded-lg focus:ring-2 focus:ring-hl-blue" />
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Mode</label>
+              <input type="text" id="field-mode" value="MMI (GUI)" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-slate-50 text-slate-700 font-medium" />
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">SDK</label>
+              <input type="text" id="field-sdk" placeholder="e.g., Auria SDK v4.2" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-hl-blue" />
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Product Class (產品類別)</label>
+              <select id="field-productClass" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-hl-blue">
+                <option value="">Choose an item.</option>
+                <option value="Internet Radio">Internet Radio</option>
+                <option value="Smart Speaker">Smart Speaker</option>
+                <option value="Hi-Fi Streamer">Hi-Fi Streamer</option>
+                <option value="Micro System">Micro System</option>
+                <option value="Soundbar">Soundbar</option>
+                <option value="Tuner Module">Tuner Module</option>
+                <option value="Clock Radio">Clock Radio</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION 2, 3, 4: Streaming, Codec, Broadcast Radio Options -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+          <!-- Streaming Options -->
+          <div class="bg-white rounded-xl border border-slate-200 shadow-xs p-5 spec-card lg:col-span-2">
+            <h3 class="text-sm sm:text-base font-bold text-hl-navy border-b border-slate-200 pb-2.5 mb-3">Streaming Options (串流服務選項)</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <label class="flex items-start gap-2.5 p-2.5 rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer">
+                <input type="checkbox" id="opt-irAirable" class="mt-0.5 w-4 h-4 text-hl-blue rounded border-slate-300 focus:ring-hl-blue" />
+                <div>
+                  <span class="text-sm font-semibold text-slate-800">IR (Airable)</span>
+                  <p class="text-[11px] text-slate-500">Internet Radio Portal</p>
+                </div>
+              </label>
+
+              <label class="flex items-start gap-2.5 p-2.5 rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer">
+                <input type="checkbox" id="opt-airplay2" class="mt-0.5 w-4 h-4 text-hl-blue rounded border-slate-300 focus:ring-hl-blue" />
+                <div>
+                  <span class="text-sm font-semibold text-slate-800">Airplay2</span>
+                  <p class="text-[11px] text-slate-500">Apple AirPlay 2 Streaming</p>
+                </div>
+              </label>
+
+              <label class="flex items-start gap-2.5 p-2.5 rounded-lg border border-amber-200 bg-amber-50/40 hover:bg-amber-50 cursor-pointer">
+                <input type="checkbox" id="opt-spotifyHiFi" class="mt-0.5 w-4 h-4 text-hl-blue rounded border-slate-300 focus:ring-hl-blue" />
+                <div>
+                  <span class="text-sm font-semibold text-slate-800">¹Spotify HiFi</span>
+                  <p class="text-[11px] text-amber-700 font-medium">(Must have Spotify Agreement before kickoff)</p>
+                </div>
+              </label>
+
+              <label class="flex items-start gap-2.5 p-2.5 rounded-lg border border-amber-200 bg-amber-50/40 hover:bg-amber-50 cursor-pointer">
+                <input type="checkbox" id="opt-tidalConnect" class="mt-0.5 w-4 h-4 text-hl-blue rounded border-slate-300 focus:ring-hl-blue" />
+                <div>
+                  <span class="text-sm font-semibold text-slate-800">Tidal Connect</span>
+                  <p class="text-[11px] text-amber-700 font-medium">(Must have Tidal Connect Agreement before kickoff)</p>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- Codec & Broadcast Radio Options -->
+          <div class="space-y-5">
+            <div class="bg-white rounded-xl border border-slate-200 shadow-xs p-5 spec-card">
+              <h3 class="text-sm sm:text-base font-bold text-hl-navy border-b border-slate-200 pb-2 mb-3">Codec Options</h3>
+              <div class="flex items-center gap-6">
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" id="opt-aac" class="w-4 h-4 text-hl-blue rounded border-slate-300 focus:ring-hl-blue" />
+                  <span class="text-sm font-medium text-slate-800">¹AAC</span>
+                </label>
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" id="opt-mp3" class="w-4 h-4 text-hl-blue rounded border-slate-300 focus:ring-hl-blue" />
+                  <span class="text-sm font-medium text-slate-800">MP3</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="bg-white rounded-xl border border-slate-200 shadow-xs p-5 spec-card">
+              <h3 class="text-sm sm:text-base font-bold text-hl-navy border-b border-slate-200 pb-2 mb-3">Broadcast Radio Options</h3>
+              <div class="flex items-center gap-6">
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" id="opt-dab" class="w-4 h-4 text-hl-blue rounded border-slate-300 focus:ring-hl-blue" />
+                  <span class="text-sm font-medium text-slate-800">DAB+</span>
+                </label>
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" id="opt-fmRds" class="w-4 h-4 text-hl-blue rounded border-slate-300 focus:ring-hl-blue" />
+                  <span class="text-sm font-medium text-slate-800">FM/RDS</span>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION 5: Additional Functionality Options -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-xs p-5 spec-card">
+          <h3 class="text-sm sm:text-base font-bold text-hl-navy border-b border-slate-200 pb-2.5 mb-4">Additional Functionality Options (附加功能與介面選項)</h3>
+          
+          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 mb-4">
+            <label class="flex items-center gap-2 p-2 rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer">
+              <input type="checkbox" id="opt-bluetooth" class="w-4 h-4 text-hl-blue rounded border-slate-300" />
+              <span class="text-xs sm:text-sm font-medium text-slate-800">Bluetooth</span>
+            </label>
+            <label class="flex items-center gap-2 p-2 rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer">
+              <input type="checkbox" id="opt-externalBt" class="w-4 h-4 text-hl-blue rounded border-slate-300" />
+              <span class="text-xs sm:text-sm font-medium text-slate-800">External BT</span>
+            </label>
+            <label class="flex items-center gap-2 p-2 rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer">
+              <input type="checkbox" id="opt-remoteCtrl" class="w-4 h-4 text-hl-blue rounded border-slate-300" />
+              <span class="text-xs sm:text-sm font-medium text-slate-800">Remote Ctrl</span>
+            </label>
+            <label class="flex items-center gap-2 p-2 rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer">
+              <input type="checkbox" id="opt-bleSetup" checked class="w-4 h-4 text-hl-blue rounded border-slate-300" />
+              <span class="text-xs sm:text-sm font-medium text-slate-800">BLE Setup</span>
+            </label>
+            <label class="flex items-center gap-2 p-2 rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer">
+              <input type="checkbox" id="opt-spdifIn" class="w-4 h-4 text-hl-blue rounded border-slate-300" />
+              <span class="text-xs sm:text-sm font-medium text-slate-800">SPDIF in</span>
+            </label>
+            <label class="flex items-center gap-2 p-2 rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer">
+              <input type="checkbox" id="opt-spdifOut" class="w-4 h-4 text-hl-blue rounded border-slate-300" />
+              <span class="text-xs sm:text-sm font-medium text-slate-800">SPDIF out</span>
+            </label>
+            <label class="flex items-center gap-2 p-2 rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer">
+              <input type="checkbox" id="opt-rca" class="w-4 h-4 text-hl-blue rounded border-slate-300" />
+              <span class="text-xs sm:text-sm font-medium text-slate-800">RCA</span>
+            </label>
+            <label class="flex items-center gap-2 p-2 rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer">
+              <input type="checkbox" id="opt-auxIn" class="w-4 h-4 text-hl-blue rounded border-slate-300" />
+              <span class="text-xs sm:text-sm font-medium text-slate-800">AUX-IN</span>
+            </label>
+            <label class="flex items-center gap-2 p-2 rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer">
+              <input type="checkbox" id="opt-i2sOutput" class="w-4 h-4 text-hl-blue rounded border-slate-300" />
+              <span class="text-xs sm:text-sm font-medium text-slate-800">I2S output</span>
+            </label>
+            <label class="flex items-center gap-2 p-2 rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer">
+              <input type="checkbox" id="opt-hdmi" class="w-4 h-4 text-hl-blue rounded border-slate-300" />
+              <span class="text-xs sm:text-sm font-medium text-slate-800">HDMI</span>
+            </label>
+            <label class="flex items-center gap-2 p-2 rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer">
+              <input type="checkbox" id="opt-i2sInput" checked class="w-4 h-4 text-hl-blue rounded border-slate-300" />
+              <span class="text-xs sm:text-sm font-medium text-slate-800">I2S Input</span>
+            </label>
+            <label class="flex items-center gap-2 p-2 rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer">
+              <input type="checkbox" id="opt-buildInDac" class="w-4 h-4 text-hl-blue rounded border-slate-300" />
+              <span class="text-xs sm:text-sm font-medium text-slate-800">Build-In DAC</span>
+            </label>
+          </div>
+
+          <div class="max-w-xs">
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Mobile App</label>
+            <select id="field-mobileApp" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-hl-blue">
+              <option value="">Choose an item.</option>
+              <option value="Undok">Undok</option>
+              <option value="OKTIV">OKTIV</option>
+              <option value="Custom App">Custom App</option>
+              <option value="None">None</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- SECTION 6 & 7: Hardware Description & Software Description -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <!-- Hardware Description -->
+          <div class="bg-white rounded-xl border border-slate-200 shadow-xs p-5 spec-card space-y-4">
+            <h3 class="text-sm sm:text-base font-bold text-hl-navy border-b border-slate-200 pb-2.5">Hardware Description (硬體規格描述)</h3>
+            
+            <div class="flex flex-wrap items-center gap-6">
+              <label class="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" id="opt-colorUi" class="w-4 h-4 text-hl-blue rounded border-slate-300" />
+                <span class="text-sm font-medium text-slate-800">Color UI</span>
+              </label>
+              <label class="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" id="opt-cdMmi" class="w-4 h-4 text-hl-blue rounded border-slate-300" />
+                <span class="text-sm font-medium text-slate-800">¹CD MMI</span>
+              </label>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">WiFi Band</label>
+                <select id="field-wifiBand" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-hl-blue">
+                  <option value="2.4G & 5G" selected>2.4G & 5G</option>
+                  <option value="2.4G Only">2.4G Only</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">²WiFi Antenna</label>
+                <select id="field-wifiAntenna" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-hl-blue">
+                  <option value="">Choose an item.</option>
+                  <option value="On-board PCB Antenna">On-board PCB Antenna</option>
+                  <option value="External IPEX Antenna">External IPEX Antenna</option>
+                  <option value="Dual Antenna (Diversity)">Dual Antenna (Diversity)</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">²DAB/FM Antenna</label>
+                <select id="field-dabFmAntenna" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-hl-blue">
+                  <option value="">Choose an item.</option>
+                  <option value="Dedicated DAB/FM Pin">Dedicated DAB/FM Pin</option>
+                  <option value="Shared Antenna">Shared Antenna</option>
+                  <option value="Telescopic / Wire Antenna">Telescopic / Wire Antenna</option>
+                  <option value="None">None</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Display Type</label>
+                <select id="field-displayType" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-hl-blue">
+                  <option value="">Choose an item.</option>
+                  <option value="TFT Color LCD">TFT Color LCD</option>
+                  <option value="OLED">OLED</option>
+                  <option value="Mono LCD">Mono LCD</option>
+                  <option value="LED Segment">LED Segment</option>
+                  <option value="None (Headless)">None (Headless)</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">LCD Interface</label>
+                <select id="field-lcdInterface" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-hl-blue">
+                  <option value="">Choose an item.</option>
+                  <option value="SPI">SPI</option>
+                  <option value="RGB">RGB</option>
+                  <option value="MCU 8-bit">MCU 8-bit</option>
+                  <option value="I2C">I2C</option>
+                  <option value="None">None</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">LCD Resolution</label>
+                <select id="field-lcdResolution" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-hl-blue">
+                  <option value="">Choose an item.</option>
+                  <option value="320x240 (2.4 / 2.8 / 3.2 inch)">320x240 (2.4" / 2.8" / 3.2")</option>
+                  <option value="480x272 (4.3 inch)">480x272 (4.3")</option>
+                  <option value="128x64 (Mono/OLED)">128x64 (Mono/OLED)</option>
+                  <option value="None">None</option>
+                </select>
+              </div>
+
+              <div class="sm:col-span-2">
+                <label class="block text-xs font-semibold text-slate-700 mb-1">MCUC Baud rate</label>
+                <select id="field-mcucBaudRate" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-hl-blue">
+                  <option value="">Choose an item.</option>
+                  <option value="9600">9600 bps</option>
+                  <option value="19200">19200 bps</option>
+                  <option value="38400">38400 bps</option>
+                  <option value="57600">57600 bps</option>
+                  <option value="115200">115200 bps</option>
+                  <option value="N/A (Standalone)">N/A (Standalone Module)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Software Description & Special Options -->
+          <div class="space-y-5">
+            <div class="bg-white rounded-xl border border-slate-200 shadow-xs p-5 spec-card space-y-4">
+              <h3 class="text-sm sm:text-base font-bold text-hl-navy border-b border-slate-200 pb-2.5">Software Description (軟體規格描述)</h3>
+              
+              <div>
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" id="opt-multiLang" class="w-4 h-4 text-hl-blue rounded border-slate-300" />
+                  <span class="text-sm font-medium text-slate-800">Multi-Lang (多國語言支援)</span>
+                </label>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">Region (銷售區域)</label>
+                  <select id="field-region" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-hl-blue">
+                    <option value="">Choose an item.</option>
+                    <option value="Europe (CE/RED)">Europe (CE/RED)</option>
+                    <option value="North America (FCC)">North America (FCC)</option>
+                    <option value="UK (UKCA)">UK (UKCA)</option>
+                    <option value="Asia-Pacific">Asia-Pacific</option>
+                    <option value="Global">Global</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">Remote (遙控器協定)</label>
+                  <select id="field-remote" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-hl-blue">
+                    <option value="">Choose an item.</option>
+                    <option value="NEC IR (Harbour Light Std)">NEC IR (Harbour Light Std)</option>
+                    <option value="NEC IR (Custom Code)">NEC IR (Custom Code)</option>
+                    <option value="RC5">RC5</option>
+                    <option value="None">None</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">³Amp/DSP/EQ</label>
+                  <select id="field-ampDspEq" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-hl-blue">
+                    <option value="">Choose an item.</option>
+                    <option value="Internal DSP + Preset EQ">Internal DSP + Preset EQ</option>
+                    <option value="External Amp/DSP (I2C Control)">External Amp/DSP (I2C Control)</option>
+                    <option value="Custom Acoustic Tuning Required">Custom Acoustic Tuning Required</option>
+                    <option value="Line Out / Bypass">Line Out / Bypass</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">Default Lang (預設語言)</label>
+                  <input type="text" id="field-defaultLang" placeholder="e.g., English / German" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-hl-blue" />
+                </div>
+              </div>
+            </div>
+
+            <!-- Special Options -->
+            <div class="bg-white rounded-xl border border-slate-200 shadow-xs p-5 spec-card">
+              <h3 class="text-sm sm:text-base font-bold text-hl-navy border-b border-slate-200 pb-2 mb-3">Special Options (特殊客製備註)</h3>
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Special note</label>
+                <textarea id="field-specialNote" rows="3" placeholder="輸入特殊硬體腳位定義、UI 客製化需求、認證或交期特殊備註..." class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-hl-blue"></textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footnotes (Matches PDF Bottom Footnotes) -->
+        <div class="bg-slate-50 rounded-xl border border-slate-200 p-4 text-xs text-slate-600 space-y-1 spec-card">
+          <p><strong>¹Note:</strong> Enabling these features may involve extra charges, please consult sales for details.</p>
+          <p><strong>²Note:</strong> Please refer to Auria data sheet for details of antenna combinations.</p>
+          <p><strong>³Note:</strong> Please contact to your account manager to understand the charge for AMP/DSP Tuning.</p>
+        </div>
+
+        <!-- Bottom Submit Actions (Hidden in Print) -->
+        <div class="flex flex-wrap items-center justify-end gap-3 pt-2 pb-8 no-print">
+          <button type="button" onclick="switchTab('dashboard')" class="px-4 py-2.5 text-sm font-medium text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded-lg transition">
+            取消 (Cancel)
+          </button>
+          <button type="submit" class="px-6 py-2.5 text-sm font-semibold text-white bg-hl-blue hover:bg-blue-800 rounded-lg shadow-sm transition">
+            儲存專案規格 (Save Project)
+          </button>
+        </div>
+      </form>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-white border-t border-slate-200 py-4 mt-auto no-print">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-2">
+      <span>© HARBOUR LIGHT TECHNOLOGY LTD. — Internal Engineering & PM Portal</span>
+      <span>Auria A3 Project Specification Management System</span>
+    </div>
+  </footer>
+
+  <!-- JavaScript Logic -->
+  <script>
+    const STORAGE_KEY = 'hl_auria_projects_v1';
+
+    // Status Badge Styling & Order Mapping
+    const STATUS_CONFIG = {
+      'Draft':          { label: 'Draft (草稿)',          badge: 'bg-slate-100 text-slate-700 border-slate-300', order: 1 },
+      'Kickoff':        { label: 'Kickoff (開案確認)',     badge: 'bg-sky-100 text-sky-800 border-sky-300',       order: 2 },
+      'In Development': { label: 'In Development (開發中)', badge: 'bg-blue-100 text-blue-800 border-blue-300',    order: 3 },
+      'EVT/DVT':        { label: 'EVT/DVT (樣機測試)',    badge: 'bg-amber-100 text-amber-800 border-amber-300', order: 4 },
+      'MP':             { label: 'MP (量產階段)',          badge: 'bg-purple-100 text-purple-800 border-purple-300', order: 5 },
+      'Completed':      { label: 'Completed (已結案)',     badge: 'bg-emerald-100 text-emerald-800 border-emerald-300', order: 6 },
+      'On Hold':        { label: 'On Hold (暫停)',         badge: 'bg-rose-100 text-rose-800 border-rose-300',    order: 7 }
+    };
+
+    // Initial Realistic Sample Data for Immediate Evaluation
+    const SAMPLE_PROJECTS = [
+      {
+        id: 'proj-1001',
+        status: 'In Development',
+        startDate: '2026-09-15',
+        lastUpdateDate: '2026-11-10',
+        completeDate: '2027-01-20',
+        updateNote: '已完成 2.8" TFT UI 切圖，正進行 Spotify Connect 與 AirPlay2 認證前測試。',
+        factory: 'Dongguan Acoustic Electronics Co., Ltd.',
+        factoryModel: 'DA-IR320-A3',
+        brand: 'NordicSound',
+        brandModel: 'AuraStream 300',
+        hwCode: 'HA-FS2345-000006',
+        swCode: 'SW-AU3-NS300-V1.2',
+        mode: 'MMI (GUI)',
+        sdk: 'Auria SDK v4.2',
+        productClass: 'Internet Radio',
+        irAirable: true,
+        airplay2: true,
+        spotifyHiFi: true,
+        tidalConnect: false,
+        aac: true,
+        mp3: true,
+        dab: true,
+        fmRds: true,
+        bluetooth: true,
+        externalBt: false,
+        remoteCtrl: true,
+        bleSetup: true,
+        spdifIn: false,
+        spdifOut: true,
+        rca: true,
+        auxIn: true,
+        i2sOutput: true,
+        hdmi: false,
+        i2sInput: true,
+        buildInDac: false,
+        mobileApp: 'OKTIV',
+        colorUi: true,
+        cdMmi: false,
+        wifiBand: '2.4G & 5G',
+        wifiAntenna: 'External IPEX Antenna',
+        dabFmAntenna: 'Dedicated DAB/FM Pin',
+        displayType: 'TFT Color LCD',
+        lcdInterface: 'SPI',
+        lcdResolution: '320x240 (2.4 / 2.8 / 3.2 inch)',
+        mcucBaudRate: '115200',
+        multiLang: true,
+        region: 'Europe (CE/RED)',
+        remote: 'NEC IR (Harbour Light Std)',
+        ampDspEq: 'External Amp/DSP (I2C Control)',
+        defaultLang: 'English',
+        specialNote: 'Need custom boot logo and rotary encoder acceleration curve tuning.'
+      },
+      {
+        id: 'proj-1002',
+        status: 'EVT/DVT',
+        startDate: '2026-07-22',
+        lastUpdateDate: '2026-11-12',
+        completeDate: '2026-12-15',
+        updateNote: 'DVT 樣機已送客戶聲學實驗室進行 DSP EQ 調音驗證，預計下週確認量產韌體。',
+        factory: 'Shenzhen Vigor Audio Mfg. Ltd.',
+        factoryModel: 'VG-HIFI-90',
+        brand: 'Cambridge Acoustics',
+        brandModel: 'CX-Stream Mini',
+        hwCode: 'HA-FS2345-000006',
+        swCode: 'SW-AU3-CA90-V2.0',
+        mode: 'MMI (GUI)',
+        sdk: 'Auria SDK v4.2',
+        productClass: 'Hi-Fi Streamer',
+        irAirable: true,
+        airplay2: true,
+        spotifyHiFi: true,
+        tidalConnect: true,
+        aac: true,
+        mp3: true,
+        dab: false,
+        fmRds: false,
+        bluetooth: true,
+        externalBt: false,
+        remoteCtrl: true,
+        bleSetup: true,
+        spdifIn: true,
+        spdifOut: true,
+        rca: true,
+        auxIn: true,
+        i2sOutput: true,
+        hdmi: false,
+        i2sInput: true,
+        buildInDac: false,
+        mobileApp: 'Custom App',
+        colorUi: true,
+        cdMmi: false,
+        wifiBand: '2.4G & 5G',
+        wifiAntenna: 'Dual Antenna (Diversity)',
+        dabFmAntenna: 'None',
+        displayType: 'TFT Color LCD',
+        lcdInterface: 'RGB',
+        lcdResolution: '480x272 (4.3 inch)',
+        mcucBaudRate: '115200',
+        multiLang: true,
+        region: 'Global',
+        remote: 'NEC IR (Custom Code)',
+        ampDspEq: 'Line Out / Bypass',
+        defaultLang: 'English',
+        specialNote: 'External ESS Sabre DAC via I2S master mode. Tidal Connect & Spotify Agreements signed.'
+      },
+      {
+        id: 'proj-1003',
+        status: 'Completed',
+        startDate: '2026-03-10',
+        lastUpdateDate: '2026-08-30',
+        completeDate: '2026-08-30',
+        updateNote: '已通過 CE/RED 認證並完成首批 10K 量產出貨，正式結案歸檔。',
+        factory: 'Huizhou GrandTech Electronic Co., Ltd.',
+        factoryModel: 'GT-CD650',
+        brand: 'Lenco / EuroSound',
+        brandModel: 'DIR-2500 CD',
+        hwCode: 'HA-FS2345-000006',
+        swCode: 'SW-AU3-GT650-MP1.0',
+        mode: 'MMI (GUI)',
+        sdk: 'Auria SDK v4.1',
+        productClass: 'Micro System',
+        irAirable: true,
+        airplay2: false,
+        spotifyHiFi: false,
+        tidalConnect: false,
+        aac: true,
+        mp3: true,
+        dab: true,
+        fmRds: true,
+        bluetooth: true,
+        externalBt: false,
+        remoteCtrl: true,
+        bleSetup: true,
+        spdifIn: false,
+        spdifOut: false,
+        rca: true,
+        auxIn: true,
+        i2sOutput: false,
+        hdmi: false,
+        i2sInput: true,
+        buildInDac: true,
+        mobileApp: 'Undok',
+        colorUi: true,
+        cdMmi: true,
+        wifiBand: '2.4G & 5G',
+        wifiAntenna: 'On-board PCB Antenna',
+        dabFmAntenna: 'Telescopic / Wire Antenna',
+        displayType: 'TFT Color LCD',
+        lcdInterface: 'SPI',
+        lcdResolution: '320x240 (2.4 / 2.8 / 3.2 inch)',
+        mcucBaudRate: '38400',
+        multiLang: true,
+        region: 'Europe (CE/RED)',
+        remote: 'NEC IR (Harbour Light Std)',
+        ampDspEq: 'Internal DSP + Preset EQ',
+        defaultLang: 'German',
+        specialNote: 'CD mechanism controlled via MCU UART 38400 baud.'
+      },
+      {
+        id: 'proj-1004',
+        status: 'Kickoff',
+        startDate: '2026-11-05',
+        lastUpdateDate: '2026-11-13',
+        completeDate: '2027-03-15',
+        updateNote: '新開案確認，已寄出 Auria A3 EVB 開發板與硬體設計指南給 OEM 工程師。',
+        factory: 'Zhongshan Melody Tech Industrial',
+        factoryModel: 'MT-SB500',
+        brand: 'KlangWerk',
+        brandModel: 'CineBar A3',
+        hwCode: 'HA-FS2345-000006',
+        swCode: 'SW-AU3-KW500-V0.1',
+        mode: 'MMI (GUI)',
+        sdk: 'Auria SDK v4.2',
+        productClass: 'Soundbar',
+        irAirable: true,
+        airplay2: true,
+        spotifyHiFi: false,
+        tidalConnect: false,
+        aac: true,
+        mp3: true,
+        dab: false,
+        fmRds: false,
+        bluetooth: true,
+        externalBt: false,
+        remoteCtrl: true,
+        bleSetup: true,
+        spdifIn: true,
+        spdifOut: false,
+        rca: false,
+        auxIn: true,
+        i2sOutput: true,
+        hdmi: true,
+        i2sInput: true,
+        buildInDac: false,
+        mobileApp: 'OKTIV',
+        colorUi: false,
+        cdMmi: false,
+        wifiBand: '2.4G & 5G',
+        wifiAntenna: 'External IPEX Antenna',
+        dabFmAntenna: 'None',
+        displayType: 'OLED',
+        lcdInterface: 'I2C',
+        lcdResolution: '128x64 (Mono/OLED)',
+        mcucBaudRate: '115200',
+        multiLang: false,
+        region: 'North America (FCC)',
+        remote: 'NEC IR (Custom Code)',
+        ampDspEq: 'Custom Acoustic Tuning Required',
+        defaultLang: 'English',
+        specialNote: 'HDMI ARC CEC volume sync required with host MCU.'
+      }
+    ];
+
+    let projects = [];
+
+    // Initialize App on Load
+    document.addEventListener('DOMContentLoaded', () => {
+      loadProjectsFromStorage();
+      renderKPIs();
+      renderProjectList();
+    });
+
+    // Load or Seed Projects
+    function loadProjectsFromStorage() {
+      try {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored) {
+          projects = JSON.parse(stored);
+        } else {
+          projects = [...SAMPLE_PROJECTS];
+          saveProjectsToStorage();
+        }
+      } catch (err) {
+        console.error('Error loading projects:', err);
+        projects = [...SAMPLE_PROJECTS];
+      }
+    }
+
+    function saveProjectsToStorage() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(projects));
+      } catch (err) {
+        showToast('儲存失敗：瀏覽器儲存空間不足', 'error');
+      }
+    }
+
+    // Helper: Get Today's Date in YYYY-MM-DD
+    function getTodayDate() {
+      const now = new Date();
+      const offset = now.getTimezoneOffset();
+      const local = new Date(now.getTime() - (offset * 60 * 1000));
+      return local.toISOString().split('T')[0];
+    }
+
+    // Navigation Tab Switching
+    function switchTab(tabName) {
+      const dashboardView = document.getElementById('view-dashboard');
+      const formView = document.getElementById('view-form');
+      const tabDashboard = document.getElementById('tab-dashboard');
+      const tabForm = document.getElementById('tab-form');
+
+      if (tabName === 'dashboard') {
+        dashboardView.classList.remove('hidden');
+        formView.classList.add('hidden');
+        tabDashboard.className = 'flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all bg-white text-hl-navy shadow-sm';
+        tabForm.className = 'flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all text-slate-200 hover:text-white';
+        document.getElementById('tab-form-label').textContent = '新增開案規格書 (New Spec)';
+        renderKPIs();
+        renderProjectList();
+      } else {
+        dashboardView.classList.add('hidden');
+        formView.classList.remove('hidden');
+        tabForm.className = 'flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all bg-white text-hl-navy shadow-sm';
+        tabDashboard.className = 'flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all text-slate-200 hover:text-white';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }
+
+    // Render Top KPI Cards
+    function renderKPIs() {
+      const total = projects.length;
+      const active = projects.filter(p => ['Kickoff', 'In Development', 'EVT/DVT'].includes(p.status)).length;
+      const mp = projects.filter(p => p.status === 'MP').length;
+      const completed = projects.filter(p => p.status === 'Completed').length;
+      const uniqueOems = new Set(projects.map(p => (p.factory || '').trim().toLowerCase()).filter(Boolean)).size;
+
+      const kpiHtml = `
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs">
+          <div class="text-xs font-medium text-slate-500">總開案數量 (Total Projects)</div>
+          <div class="mt-1.5 flex items-baseline justify-between">
+            <span class="text-2xl font-bold text-slate-900">${total}</span>
+            <span class="text-[11px] font-medium text-slate-400">All Specs</span>
+          </div>
+        </div>
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs">
+          <div class="text-xs font-medium text-slate-500">進行中專案 (Active / Dev)</div>
+          <div class="mt-1.5 flex items-baseline justify-between">
+            <span class="text-2xl font-bold text-hl-blue">${active}</span>
+            <span class="text-[11px] font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">Kickoff ~ DVT</span>
+          </div>
+        </div>
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs">
+          <div class="text-xs font-medium text-slate-500">量產階段 (Mass Production)</div>
+          <div class="mt-1.5 flex items-baseline justify-between">
+            <span class="text-2xl font-bold text-purple-700">${mp}</span>
+            <span class="text-[11px] font-semibold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-full">MP</span>
+          </div>
+        </div>
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs">
+          <div class="text-xs font-medium text-slate-500">已結案 (Completed)</div>
+          <div class="mt-1.5 flex items-baseline justify-between">
+            <span class="text-2xl font-bold text-emerald-600">${completed}</span>
+            <span class="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">Done</span>
+          </div>
+        </div>
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs col-span-2 lg:col-span-1">
+          <div class="text-xs font-medium text-slate-500">合作 OEM 廠商數</div>
+          <div class="mt-1.5 flex items-baseline justify-between">
+            <span class="text-2xl font-bold text-slate-800">${uniqueOems}</span>
+            <span class="text-[11px] font-medium text-slate-400">Factories</span>
+          </div>
+        </div>
+      `;
+      document.getElementById('kpi-container').innerHTML = kpiHtml;
+    }
+
+    // Quick Toggle OEM Sort when clicking Table Header
+    function toggleOemSort() {
+      const sortSelect = document.getElementById('sort-by');
+      if (sortSelect.value === 'oem_asc') {
+        sortSelect.value = 'oem_desc';
+      } else {
+        sortSelect.value = 'oem_asc';
+      }
+      renderProjectList();
+    }
+
+    // Render Project List Table with Filtering and Sorting
+    function renderProjectList() {
+      const searchQuery = (document.getElementById('search-input').value || '').toLowerCase().trim();
+      const statusFilter = document.getElementById('filter-status').value;
+      const sortBy = document.getElementById('sort-by').value;
+
+      // Update header sort arrow indicator
+      const indicator = document.getElementById('oem-sort-indicator');
+      if (sortBy === 'oem_asc') indicator.textContent = '▲';
+      else if (sortBy === 'oem_desc') indicator.textContent = '▼';
+      else indicator.textContent = '⇅';
+
+      // Filter
+      let filtered = projects.filter(p => {
+        const matchesStatus = statusFilter === 'ALL' || p.status === statusFilter;
+        const searchableText = [
+          p.factory,
+          p.factoryModel,
+          p.brand,
+          p.brandModel,
+          p.hwCode,
+          p.swCode,
+          p.productClass,
+          p.updateNote
+        ].join(' ').toLowerCase();
+        const matchesSearch = !searchQuery || searchableText.includes(searchQuery);
+        return matchesStatus && matchesSearch;
+      });
+
+      // Sort
+      filtered.sort((a, b) => {
+        switch (sortBy) {
+          case 'oem_asc':
+            return (a.factory || '').localeCompare(b.factory || '', 'zh-Hant', { sensitivity: 'base' });
+          case 'oem_desc':
+            return (b.factory || '').localeCompare(a.factory || '', 'zh-Hant', { sensitivity: 'base' });
+          case 'brand_asc':
+            return (a.brand || '').localeCompare(b.brand || '', 'zh-Hant', { sensitivity: 'base' });
+          case 'update_desc':
+            return (b.lastUpdateDate || '').localeCompare(a.lastUpdateDate || '');
+          case 'start_desc':
+            return (b.startDate || '').localeCompare(a.startDate || '');
+          case 'start_asc':
+            return (a.startDate || '').localeCompare(b.startDate || '');
+          case 'complete_asc':
+            const cA = a.completeDate || '9999-12-31';
+            const cB = b.completeDate || '9999-12-31';
+            return cA.localeCompare(cB);
+          case 'status':
+            const oA = STATUS_CONFIG[a.status]?.order || 99;
+            const oB = STATUS_CONFIG[b.status]?.order || 99;
+            return oA - oB;
+          default:
+            return 0;
+        }
+      });
+
+      const tbody = document.getElementById('project-table-body');
+      const emptyState = document.getElementById('empty-state');
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = '';
+        emptyState.classList.remove('hidden');
+        return;
+      }
+
+      emptyState.classList.add('hidden');
+      tbody.innerHTML = filtered.map(p => {
+        const st = STATUS_CONFIG[p.status] || { label: p.status, badge: 'bg-slate-100 text-slate-700 border-slate-300' };
+        return `
+          <tr class="hover:bg-blue-50/40 transition-colors group">
+            <td class="py-3.5 px-4 whitespace-nowrap">
+              <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border ${st.badge}">
+                ${escapeHtml(st.label)}
+              </span>
+            </td>
+            <td class="py-3.5 px-4">
+              <div class="font-bold text-slate-900">${escapeHtml(p.factory || '-')}</div>
+              <div class="text-xs text-slate-500">Factory Model: <span class="font-medium text-slate-700">${escapeHtml(p.factoryModel || '-')}</span></div>
+            </td>
+            <td class="py-3.5 px-4">
+              <div class="font-semibold text-slate-800">${escapeHtml(p.brand || '-')}</div>
+              <div class="text-xs text-slate-500">${escapeHtml(p.brandModel || '-')} ${p.productClass ? `· <span class="text-hl-accent font-medium">${escapeHtml(p.productClass)}</span>` : ''}</div>
+            </td>
+            <td class="py-3.5 px-4 whitespace-nowrap">
+              <div class="text-xs font-mono font-medium text-slate-700">HW: ${escapeHtml(p.hwCode || '-')}</div>
+              <div class="text-xs font-mono text-slate-500">SW: ${escapeHtml(p.swCode || '-')}</div>
+            </td>
+            <td class="py-3.5 px-4 whitespace-nowrap text-xs font-medium text-slate-700">
+              ${escapeHtml(p.startDate || '-')}
+            </td>
+            <td class="py-3.5 px-4 whitespace-nowrap text-xs font-semibold text-hl-blue">
+              ${escapeHtml(p.lastUpdateDate || '-')}
+            </td>
+            <td class="py-3.5 px-4 whitespace-nowrap text-xs font-medium ${p.completeDate ? 'text-slate-700' : 'text-slate-400'}">
+              ${escapeHtml(p.completeDate || '未定 (TBD)')}
+            </td>
+            <td class="py-3.5 px-4 max-w-xs">
+              <p class="text-xs text-slate-600 line-clamp-2" title="${escapeHtml(p.updateNote || '')}">
+                ${escapeHtml(p.updateNote || '尚無更新備註')}
+              </p>
+            </td>
+            <td class="py-3.5 px-4 whitespace-nowrap text-right">
+              <div class="inline-flex items-center gap-1.5">
+                <button onclick="editProject('${p.id}')" title="檢視 / 編輯規格書" class="px-2.5 py-1.5 text-xs font-semibold text-hl-blue bg-blue-50 hover:bg-blue-100 rounded-lg border border-blue-200 transition">
+                  編輯規格
+                </button>
+                <button onclick="printProject('${p.id}')" title="列印 / 匯出 PDF 規格書" class="p-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                  </svg>
+                </button>
+                <button onclick="duplicateProject('${p.id}')" title="複製此開案規格" class="p-1.5 text-slate-600 hover:text-hl-blue hover:bg-slate-100 rounded-lg transition">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  </svg>
+                </button>
+                <button onclick="deleteProject('${p.id}')" title="刪除專案" class="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // Create New Project (Reset Form to Defaults matching Auria PDF)
+    function createNewProject() {
+      document.getElementById('spec-form').reset();
+      document.getElementById('project-id').value = '';
+      document.getElementById('tab-form-label').textContent = '新增開案規格書 (New Spec)';
+      document.getElementById('btn-save-as-new').classList.add('hidden');
+
+      const today = getTodayDate();
+      document.getElementById('field-status').value = 'Kickoff';
+      document.getElementById('field-startDate').value = today;
+      document.getElementById('field-lastUpdateDate').value = today;
+      document.getElementById('field-completeDate').value = '';
+      document.getElementById('field-hwCode').value = 'HA-FS2345-000006';
+      document.getElementById('field-mode').value = 'MMI (GUI)';
+      document.getElementById('field-wifiBand').value = '2.4G & 5G';
+
+      // Default checked items as seen in original PDF
+      document.getElementById('opt-bleSetup').checked = true;
+      document.getElementById('opt-i2sInput').checked = true;
+
+      switchTab('form');
+    }
+
+    // Load Existing Project into Form
+    function editProject(id) {
+      const proj = projects.find(p => p.id === id);
+      if (!proj) return;
+
+      document.getElementById('project-id').value = proj.id;
+      document.getElementById('tab-form-label').textContent = `編輯規格書: ${proj.factory || '專案'}`;
+      document.getElementById('btn-save-as-new').classList.remove('hidden');
+
+      // Populate text/select fields
+      document.getElementById('field-status').value = proj.status || 'Kickoff';
+      document.getElementById('field-startDate').value = proj.startDate || '';
+      document.getElementById('field-lastUpdateDate').value = proj.lastUpdateDate || getTodayDate();
+      document.getElementById('field-completeDate').value = proj.completeDate || '';
+      document.getElementById('field-updateNote').value = proj.updateNote || '';
+
+      document.getElementById('field-factory').value = proj.factory || '';
+      document.getElementById('field-factoryModel').value = proj.factoryModel || '';
+      document.getElementById('field-brand').value = proj.brand || '';
+      document.getElementById('field-brandModel').value = proj.brandModel || '';
+      document.getElementById('field-hwCode').value = proj.hwCode || 'HA-FS2345-000006';
+      document.getElementById('field-swCode').value = proj.swCode || '';
+      document.getElementById('field-mode').value = proj.mode || 'MMI (GUI)';
+      document.getElementById('field-sdk').value = proj.sdk || '';
+      document.getElementById('field-productClass').value = proj.productClass || '';
+
+      // Populate checkboxes
+      const checkboxFields = [
+        'irAirable', 'airplay2', 'spotifyHiFi', 'tidalConnect',
+        'aac', 'mp3', 'dab', 'fmRds',
+        'bluetooth', 'externalBt', 'remoteCtrl', 'bleSetup',
+        'spdifIn', 'spdifOut', 'rca', 'auxIn',
+        'i2sOutput', 'hdmi', 'i2sInput', 'buildInDac',
+        'colorUi', 'cdMmi', 'multiLang'
+      ];
+      checkboxFields.forEach(key => {
+        const el = document.getElementById(`opt-${key}`);
+        if (el) el.checked = Boolean(proj[key]);
+      });
+
+      document.getElementById('field-mobileApp').value = proj.mobileApp || '';
+      document.getElementById('field-wifiBand').value = proj.wifiBand || '2.4G & 5G';
+      document.getElementById('field-wifiAntenna').value = proj.wifiAntenna || '';
+      document.getElementById('field-dabFmAntenna').value = proj.dabFmAntenna || '';
+      document.getElementById('field-displayType').value = proj.displayType || '';
+      document.getElementById('field-lcdInterface').value = proj.lcdInterface || '';
+      document.getElementById('field-lcdResolution').value = proj.lcdResolution || '';
+      document.getElementById('field-mcucBaudRate').value = proj.mcucBaudRate || '';
+
+      document.getElementById('field-region').value = proj.region || '';
+      document.getElementById('field-remote').value = proj.remote || '';
+      document.getElementById('field-ampDspEq').value = proj.ampDspEq || '';
+      document.getElementById('field-defaultLang').value = proj.defaultLang || '';
+      document.getElementById('field-specialNote').value = proj.specialNote || '';
+
+      switchTab('form');
+    }
+
+    // Print Project directly from List
+    function printProject(id) {
+      editProject(id);
+      setTimeout(() => {
+        window.print();
+      }, 250);
+    }
+
+    // Save Project (Create or Update)
+    function saveProject(saveAsNew = false) {
+      const factoryInput = document.getElementById('field-factory');
+      if (!factoryInput.value.trim()) {
+        showToast('請填寫 Factory / OEM Name (OEM 廠商名稱)', 'error');
+        factoryInput.focus();
+        return;
+      }
+
+      const existingId = document.getElementById('project-id').value;
+      const isNew = !existingId || saveAsNew;
+      const today = getTodayDate();
+
+      const projectData = {
+        id: isNew ? `proj-${Date.now()}` : existingId,
+        status: document.getElementById('field-status').value,
+        startDate: document.getElementById('field-startDate').value || today,
+        lastUpdateDate: today, // Auto-update to today on save
+        completeDate: document.getElementById('field-completeDate').value,
+        updateNote: document.getElementById('field-updateNote').value.trim(),
+
+        factory: factoryInput.value.trim(),
+        factoryModel: document.getElementById('field-factoryModel').value.trim(),
+        brand: document.getElementById('field-brand').value.trim(),
+        brandModel: document.getElementById('field-brandModel').value.trim(),
+        hwCode: document.getElementById('field-hwCode').value.trim() || 'HA-FS2345-000006',
+        swCode: document.getElementById('field-swCode').value.trim(),
+        mode: document.getElementById('field-mode').value.trim() || 'MMI (GUI)',
+        sdk: document.getElementById('field-sdk').value.trim(),
+        productClass: document.getElementById('field-productClass').value,
+
+        irAirable: document.getElementById('opt-irAirable').checked,
+        airplay2: document.getElementById('opt-airplay2').checked,
+        spotifyHiFi: document.getElementById('opt-spotifyHiFi').checked,
+        tidalConnect: document.getElementById('opt-tidalConnect').checked,
+        aac: document.getElementById('opt-aac').checked,
+        mp3: document.getElementById('opt-mp3').checked,
+        dab: document.getElementById('opt-dab').checked,
+        fmRds: document.getElementById('opt-fmRds').checked,
+
+        bluetooth: document.getElementById('opt-bluetooth').checked,
+        externalBt: document.getElementById('opt-externalBt').checked,
+        remoteCtrl: document.getElementById('opt-remoteCtrl').checked,
+        bleSetup: document.getElementById('opt-bleSetup').checked,
+        spdifIn: document.getElementById('opt-spdifIn').checked,
+        spdifOut: document.getElementById('opt-spdifOut').checked,
+        rca: document.getElementById('opt-rca').checked,
+        auxIn: document.getElementById('opt-auxIn').checked,
+        i2sOutput: document.getElementById('opt-i2sOutput').checked,
+        hdmi: document.getElementById('opt-hdmi').checked,
+        i2sInput: document.getElementById('opt-i2sInput').checked,
+        buildInDac: document.getElementById('opt-buildInDac').checked,
+        mobileApp: document.getElementById('field-mobileApp').value,
+
+        colorUi: document.getElementById('opt-colorUi').checked,
+        cdMmi: document.getElementById('opt-cdMmi').checked,
+        wifiBand: document.getElementById('field-wifiBand').value,
+        wifiAntenna: document.getElementById('field-wifiAntenna').value,
+        dabFmAntenna: document.getElementById('field-dabFmAntenna').value,
+        displayType: document.getElementById('field-displayType').value,
+        lcdInterface: document.getElementById('field-lcdInterface').value,
+        lcdResolution: document.getElementById('field-lcdResolution').value,
+        mcucBaudRate: document.getElementById('field-mcucBaudRate').value,
+
+        multiLang: document.getElementById('opt-multiLang').checked,
+        region: document.getElementById('field-region').value,
+        remote: document.getElementById('field-remote').value,
+        ampDspEq: document.getElementById('field-ampDspEq').value,
+        defaultLang: document.getElementById('field-defaultLang').value.trim(),
+        specialNote: document.getElementById('field-specialNote').value.trim()
+      };
+
+      if (isNew) {
+        projects.unshift(projectData);
+        showToast(saveAsNew ? '已另存為新開案專案！' : '新專案開案規格已儲存！', 'success');
+      } else {
+        const idx = projects.findIndex(p => p.id === existingId);
+        if (idx !== -1) {
+          projects[idx] = projectData;
+          showToast('專案規格與最新進度已更新！', 'success');
+        }
+      }
+
+      saveProjectsToStorage();
+      switchTab('dashboard');
+    }
+
+    // Duplicate Project
+    function duplicateProject(id) {
+      const original = projects.find(p => p.id === id);
+      if (!original) return;
+
+      const today = getTodayDate();
+      const copy = {
+        ...original,
+        id: `proj-${Date.now()}`,
+        factoryModel: `${original.factoryModel || 'Model'}-Copy`,
+        status: 'Draft',
+        startDate: today,
+        lastUpdateDate: today,
+        completeDate: '',
+        updateNote: `複製自 ${original.factory} (${original.brandModel || original.factoryModel})`
+      };
+
+      projects.unshift(copy);
+      saveProjectsToStorage();
+      renderKPIs();
+      renderProjectList();
+      showToast('已複製專案規格，您可以直接編輯細節', 'success');
+    }
+
+    // Delete Project with Custom Modal Confirmation
+    function deleteProject(id) {
+      const proj = projects.find(p => p.id === id);
+      if (!proj) return;
+
+      openConfirmModal(
+        '刪除專案確認 (Delete Project)',
+        `確定要刪除「${proj.factory} - ${proj.brandModel || proj.factoryModel || '未命名型號'}」的開案資料嗎？此操作無法復原。`,
+        () => {
+          projects = projects.filter(p => p.id !== id);
+          saveProjectsToStorage();
+          renderKPIs();
+          renderProjectList();
+          showToast('專案已刪除', 'info');
+        }
+      );
+    }
+
+    // Export All Projects as JSON File
+    function exportProjectsJSON() {
+      const dataStr = JSON.stringify(projects, null, 2);
+      const blob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `HarbourLight_Auria_Projects_${getTodayDate()}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast('已匯出 JSON 專案備份檔案', 'success');
+    }
+
+    // Import Projects from JSON File
+    function importProjectsJSON(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const imported = JSON.parse(e.target.result);
+          if (!Array.isArray(imported)) {
+            throw new Error('Invalid JSON format');
+          }
+          // Merge by ID (update existing or prepend new)
+          let added = 0;
+          let updated = 0;
+          imported.forEach(item => {
+            if (!item.id) item.id = `proj-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+            const existingIndex = projects.findIndex(p => p.id === item.id);
+            if (existingIndex !== -1) {
+              projects[existingIndex] = item;
+              updated++;
+            } else {
+              projects.unshift(item);
+              added++;
+            }
+          });
+          saveProjectsToStorage();
+          renderKPIs();
+          renderProjectList();
+          showToast(`匯入成功：新增 ${added} 筆，更新 ${updated} 筆專案`, 'success');
+        } catch (err) {
+          showToast('匯入失敗：檔案格式不正確，請選擇有效的 JSON 備份檔', 'error');
+        }
+        event.target.value = '';
+      };
+      reader.readAsText(file);
+    }
+
+    // Custom Confirm Modal Controller
+    function openConfirmModal(title, message, onConfirm) {
+      const modal = document.getElementById('confirm-modal');
+      document.getElementById('confirm-title').textContent = title;
+      document.getElementById('confirm-message').textContent = message;
+
+      const okBtn = document.getElementById('confirm-ok-btn');
+      const cancelBtn = document.getElementById('confirm-cancel-btn');
+
+      const cleanup = () => {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+      };
+
+      okBtn.onclick = () => {
+        cleanup();
+        onConfirm();
+      };
+      cancelBtn.onclick = cleanup;
+
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    // Toast Notification Helper
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      
+      const colors = {
+        success: 'bg-emerald-700 text-white border-emerald-600',
+        error: 'bg-red-700 text-white border-red-600',
+        info: 'bg-slate-800 text-white border-slate-700'
+      };
+
+      toast.className = `px-4 py-3 rounded-xl shadow-lg border text-xs sm:text-sm font-medium flex items-center gap-2 transition-all transform translate-y-0 opacity-100 ${colors[type] || colors.info}`;
+      toast.textContent = message;
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 300);
+      }, 3200);
+    }
+
+    // XSS Prevention Helper
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+  </script>
+</body>
+</html>
